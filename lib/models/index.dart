@@ -100,23 +100,15 @@ class PromptResponse {
   }
 }
 
-class BackgroundImage {
+class BackgroundImage extends HiveObject {
   int width;
   int height;
-  final int key;
   final Uint8List data;
   final String? mimeType;
   final String? name;
   final String date = DateTime.now().toString();
 
-  BackgroundImage({
-    required this.width,
-    required this.height,
-    required this.data,
-    this.name,
-    this.mimeType,
-    this.key = 0,
-  });
+  BackgroundImage({required this.width, required this.height, required this.data, this.name, this.mimeType});
 
   factory BackgroundImage.fromJson(dynamic json) {
     return BackgroundImage(
@@ -125,7 +117,6 @@ class BackgroundImage {
       data: json["data"],
       mimeType: json["mimeType"],
       name: json["name"],
-      key: json["key"],
     );
   }
 

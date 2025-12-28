@@ -8,6 +8,7 @@ import '/state.dart';
 import 'package:swipe_image_gallery/swipe_image_gallery.dart';
 import 'package:responsive_grid_list/responsive_grid_list.dart';
 import '/models/index.dart';
+import 'package:file_saver/file_saver.dart';
 
 class Gallery extends StatefulWidget {
   @override
@@ -56,6 +57,7 @@ class _State extends State<Gallery> {
             bottom: 0,
             left: 0,
             child: Row(
+              spacing: 10,
               children: [
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -63,9 +65,23 @@ class _State extends State<Gallery> {
                   ),
                   child: Text("Delete", style: theme.textTheme.bodyMedium),
                   onPressed: () {
-                    print(image.key);
+                    // Deletes image from gallery
                     provider.images.deleteAt(image.key);
                     setState(() {});
+                  },
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text("Save", style: theme.textTheme.bodyMedium),
+                  onPressed: () async {
+                    // Deletes image from gallery
+                    await FileSaver.instance.saveFile(
+                      name: image.name ?? "default",
+                      mimeType: MimeType.png,
+                      bytes: image.data,
+                    );
                   },
                 ),
               ],

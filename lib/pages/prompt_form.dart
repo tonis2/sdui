@@ -92,7 +92,6 @@ class _State extends State<GenerateImage> {
 
           if (response.images.isNotEmpty) {
             var newImage = BackgroundImage(
-              key: provider.images.length,
               width: imagePrompt.width,
               height: imagePrompt.height,
               data: response.images.first,
