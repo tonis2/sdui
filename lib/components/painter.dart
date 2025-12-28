@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import '/models/index.dart';
 import 'dart:ui';
 
 class DrawingPoint {
@@ -28,35 +29,11 @@ class MyPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-class BackgroundImage {
-  int width;
-  int height;
-  Uint8List data;
-  String? mimeType;
-  String? name;
-
-  BackgroundImage({required this.width, required this.height, required this.data, this.name, this.mimeType});
-
-  factory BackgroundImage.fromJson(Map<String, dynamic> json) {
-    return BackgroundImage(
-      width: json["width"],
-      height: json["height"],
-      data: json["data"],
-      mimeType: json["mimeType"],
-      name: json["name"],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {"width": width, "height": height, "data": data, "mimeType": mimeType, "name": name};
-  }
-}
-
 class CanvasController extends ChangeNotifier {
   List<DrawingPoint?> points = [];
   Color paintColor;
   double strokeWidth;
-  List<BackgroundImage> backgroundLayers = [];
+  BackgroundImage? backgroundLayer;
   CustomPainter? canvas;
 
   CanvasController({this.paintColor = const Color.fromRGBO(255, 254, 254, 0.213), this.strokeWidth = 25.0}) {
@@ -80,10 +57,8 @@ class CanvasController extends ChangeNotifier {
   }
 
   void resize(int width, int height) {
-    for (var image in backgroundLayers) {
-      image.width = width;
-      image.height = height;
-    }
+    backgroundLayer?.width = width;
+    backgroundLayer?.height = height;
 
     recreateCanvas();
     notifyListeners();
@@ -95,18 +70,8 @@ class CanvasController extends ChangeNotifier {
   //   notifyListeners();
   // }
 
-  void addBackground(BackgroundImage image) {
-    backgroundLayers.add(image);
-    recreateCanvas();
-    notifyListeners();
-  }
-
   void setBackground(BackgroundImage image) {
-    if (backgroundLayers.isEmpty) {
-      backgroundLayers.add(image);
-    } else {
-      backgroundLayers[0] = image;
-    }
+    backgroundLayer = image;
 
     points.clear();
     recreateCanvas();
@@ -180,21 +145,20 @@ class _State extends State<CanvasPainter> {
             );
           });
         },
-        onPanEnd: (details) {
-          widget.controller.addPoint(null); // Add a null to signify the end of a stroke
-        },
+        onPanEnd: (details) => widget.controller.addPoint(null),
         child: Stack(
           children: [
-            // 1. The Background Image
-            ...widget.controller.backgroundLayers.map(
-              (img) => Align(
+            if (widget.controller.backgroundLayer != null)
+              Align(
                 alignment: AlignmentGeometry.center,
                 child: Image(
-                  image: ResizeImage(MemoryImage(img.data), width: img.width, height: img.height),
+                  image: ResizeImage(
+                    MemoryImage(widget.controller.backgroundLayer!.data),
+                    width: widget.controller.backgroundLayer!.width,
+                    height: widget.controller.backgroundLayer!.height,
+                  ),
                 ),
               ),
-            ),
-            // 2. The CustomPaint layer
             CustomPaint(painter: widget.controller.canvas, size: size),
           ],
         ),

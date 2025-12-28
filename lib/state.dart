@@ -1,10 +1,9 @@
-import 'dart:convert';
-
+import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter/material.dart';
 import '/services/api.dart';
-import 'components/painter.dart';
-import 'package:localstorage/localstorage.dart';
+
 export '/services/api.dart';
+import '/models/index.dart';
 
 class Inherited extends InheritedNotifier<AppState> {
   const Inherited({required super.child, super.key, required super.notifier});
@@ -16,25 +15,15 @@ class Inherited extends InheritedNotifier<AppState> {
   bool updateShouldNotify(InheritedNotifier<AppState> oldState) => true;
 }
 
+Future<AppState> createState({required KoboldApi api}) async {
+  Hive.registerAdapter(ImageAdapter());
+  var images = await Hive.openBox<BackgroundImage>('images');
+  return AppState(api: api, images: images);
+}
+
 class AppState extends ChangeNotifier {
-  AppState({required this.api});
+  AppState({required this.api, required this.images});
 
-  KoboldApi? api;
-  List<BackgroundImage> images = [];
-
-  Future<void> loadImageCache() async {
-    String? data = localStorage.getItem("image_cache");
-    if (data != null) images = jsonDecode(data).map((item) => BackgroundImage.fromJson(item));
-    notifyListeners();
-  }
-
-  void saveImageCache() async {
-    localStorage.setItem("image_cache", jsonEncode(List.from(images.map((image) => image.toJson()))));
-  }
-
-  void addImage(BackgroundImage image) {
-    images.add(image);
-    saveImageCache();
-    notifyListeners();
-  }
+  KoboldApi api;
+  Box<BackgroundImage> images;
 }

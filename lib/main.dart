@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:localstorage/localstorage.dart';
 import 'menu.dart';
-
+import 'dart:ui';
 import '/state.dart';
 import '/config.dart';
 import '/pages/index.dart';
@@ -33,14 +33,17 @@ void main() async {
   // web.window.document.querySelector(".loader")?.remove();
 
   KoboldApi api = KoboldApi(headers: {}, baseUrl: "http://localhost:5001");
-  AppState state = AppState(api: api);
+  AppState state = await createState(api: api);
 
   runApp(Main(state: state));
 }
 
 Widget base(Widget child) {
   // Size size = MediaQuery.sizeOf(rootNavigatorKey.currentState!.context);
-  return Expanded(
+  FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+  return SizedBox(
+    width: view.physicalSize.width,
+    height: view.physicalSize.height,
     child: Column(
       spacing: 10,
       children: [

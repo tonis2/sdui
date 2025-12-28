@@ -15,7 +15,7 @@ import 'package:sdui/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     KoboldApi api = KoboldApi(headers: {}, baseUrl: "http://localhost:5001");
-    AppState state = AppState(api: api);
+    AppState state = await createState(api: api);
     // Build our app and trigger a frame.
     await tester.pumpWidget(Main(state: state));
 

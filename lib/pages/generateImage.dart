@@ -12,9 +12,14 @@ class GenerateImage extends StatefulWidget {
 }
 
 class _State extends State<GenerateImage> {
-  CanvasController painterController = CanvasController();
   ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "");
   bool loading = false;
+
+  CanvasController painterController = CanvasController();
+  TextEditingController widthController = TextEditingController();
+  TextEditingController heightController = TextEditingController();
+  TextEditingController promptController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   Future<FilePickerResult?> pickContextImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -56,48 +61,67 @@ class _State extends State<GenerateImage> {
 
   @override
   void dispose() {
+    painterController.dispose();
+    widthController.dispose();
+    heightController.dispose();
+    promptController.dispose();
     super.dispose();
   }
 
+  @override
+  void initState() {
+    widthController.text = imagePrompt.width.toString();
+    heightController.text = imagePrompt.height.toString();
+    super.initState();
+  }
+
   void generateImage() async {
-    try {
-      AppState provider = Inherited.of(context)!;
-      setState(() {
-        loading = true;
-      });
+    if (_formKey.currentState!.validate()) {
+      try {
+        AppState provider = Inherited.of(context)!;
+        setState(() {
+          loading = true;
+        });
 
-      PromptResponse? response = await provider.api?.postImageToImage(imagePrompt);
+        PromptResponse? response = await provider.api.postImageToImage(imagePrompt);
 
-      setState(() {
-        loading = false;
-      });
+        if (mounted) {
+          setState(() {
+            loading = false;
+          });
 
-      if (response != null && response.images.isNotEmpty) {
-        var newImage = BackgroundImage(
-          width: imagePrompt.width,
-          height: imagePrompt.height,
-          data: response.images.first,
-          name: response.info,
-        );
-        painterController.setBackground(newImage);
-        provider.addImage(newImage);
+          if (response.images.isNotEmpty) {
+            var newImage = BackgroundImage(
+              key: provider.images.length,
+              width: imagePrompt.width,
+              height: imagePrompt.height,
+              data: response.images.first,
+              name: response.info,
+            );
+            painterController.setBackground(newImage);
+            provider.images.add(newImage);
+          }
+        }
+      } catch (err) {
+        print(err.toString());
+
+        if (mounted) {
+          setState(() {
+            loading = false;
+          });
+        }
       }
-    } catch (err) {
-      print(err.toString());
-
-      setState(() {
-        loading = false;
-      });
     }
   }
+
+  FilteringTextInputFormatter doubleInputFilter = FilteringTextInputFormatter.allow(RegExp(r'(^\d*[\.]?\d{0,2})'));
+  OutlineInputBorder inputBorder = OutlineInputBorder(borderSide: BorderSide(color: Colors.black, width: 1));
 
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
-
-    OutlineInputBorder inputBorder = OutlineInputBorder(borderSide: BorderSide(color: Colors.black, width: 1));
     TextStyle? inputText = theme.textTheme.bodyMedium;
-    var doubleInputFilter = FilteringTextInputFormatter.allow(RegExp(r'(^\d*[\.]?\d{0,2})'));
+    Size size = MediaQuery.sizeOf(context);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -105,9 +129,10 @@ class _State extends State<GenerateImage> {
         spacing: 15,
         children: [
           Container(
-            width: MediaQuery.sizeOf(context).width * 0.45,
-            height: MediaQuery.sizeOf(context).height,
+            width: size.width * 0.45,
+            height: size.height,
             child: Form(
+              key: _formKey,
               child: Column(
                 mainAxisSize: .min,
                 spacing: 10,
@@ -116,7 +141,7 @@ class _State extends State<GenerateImage> {
                   Divider(),
                   SizedBox(height: 6),
                   TextFormField(
-                    initialValue: imagePrompt.prompt,
+                    controller: promptController,
                     decoration: InputDecoration(
                       label: Text("Prompt", style: inputText),
                       border: inputBorder,
@@ -126,6 +151,12 @@ class _State extends State<GenerateImage> {
                     keyboardType: TextInputType.multiline,
                     onChanged: (value) {
                       imagePrompt.prompt = value;
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a prompt';
+                      }
+                      return null;
                     },
                   ),
                   TextFormField(
@@ -141,17 +172,13 @@ class _State extends State<GenerateImage> {
                       imagePrompt.negativePrompt = value;
                     },
                   ),
-                  SizedBox(
-                    width: double.maxFinite,
-                    height: 350,
-                    child: GridView(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisExtent: 70,
-                        crossAxisSpacing: 15,
-                      ),
-                      children: [
-                        TextFormField(
+                  Flex(
+                    direction: Axis.horizontal,
+                    spacing: 10,
+                    children: [
+                      Flexible(
+                        flex: 2,
+                        child: TextFormField(
                           initialValue: imagePrompt.seed.toString(),
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: InputDecoration(
@@ -163,7 +190,10 @@ class _State extends State<GenerateImage> {
                             imagePrompt.seed = int.tryParse(value) ?? -1;
                           },
                         ),
-                        TextFormField(
+                      ),
+                      Flexible(
+                        flex: 2,
+                        child: TextFormField(
                           initialValue: imagePrompt.sampler,
                           decoration: InputDecoration(
                             label: Text("Sampler", style: inputText),
@@ -174,7 +204,10 @@ class _State extends State<GenerateImage> {
                             imagePrompt.sampler = value;
                           },
                         ),
-                        TextFormField(
+                      ),
+                      Flexible(
+                        flex: 2,
+                        child: TextFormField(
                           initialValue: imagePrompt.steps.toString(),
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: InputDecoration(
@@ -186,7 +219,10 @@ class _State extends State<GenerateImage> {
                             imagePrompt.steps = int.tryParse(value) ?? -1;
                           },
                         ),
-                        TextFormField(
+                      ),
+                      Flexible(
+                        flex: 2,
+                        child: TextFormField(
                           initialValue: imagePrompt.guidance.toString(),
                           inputFormatters: [doubleInputFilter],
                           decoration: InputDecoration(
@@ -198,34 +234,10 @@ class _State extends State<GenerateImage> {
                             imagePrompt.guidance = double.tryParse(value) ?? 1;
                           },
                         ),
-                        TextFormField(
-                          initialValue: imagePrompt.width.toString(),
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            label: Text("Width", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            imagePrompt.width = int.tryParse(value) ?? -1;
-                            painterController.resize(imagePrompt.width, imagePrompt.height);
-                          },
-                        ),
-                        TextFormField(
-                          initialValue: imagePrompt.height.toString(),
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            label: Text("Height", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            imagePrompt.height = int.tryParse(value) ?? -1;
-                            painterController.resize(imagePrompt.width, imagePrompt.height);
-                          },
-                        ),
-
-                        TextFormField(
+                      ),
+                      Flexible(
+                        flex: 2,
+                        child: TextFormField(
                           initialValue: imagePrompt.noiseStrenght.toString(),
                           inputFormatters: [doubleInputFilter],
                           decoration: InputDecoration(
@@ -237,7 +249,10 @@ class _State extends State<GenerateImage> {
                             imagePrompt.noiseStrenght = double.tryParse(value) ?? 4;
                           },
                         ),
-                        TextFormField(
+                      ),
+                      Flexible(
+                        flex: 2,
+                        child: TextFormField(
                           initialValue: "default",
                           decoration: InputDecoration(
                             label: Text("Scheduler", style: inputText),
@@ -248,40 +263,114 @@ class _State extends State<GenerateImage> {
                             // imagePrompt.noiseStrenght = double.tryParse(value) ?? 4;
                           },
                         ),
-                        Row(
+                      ),
+                    ],
+                  ),
+                  Flex(
+                    direction: .horizontal,
+                    spacing: 10,
+                    mainAxisAlignment: .start,
+                    crossAxisAlignment: .start,
+                    children: [
+                      Flexible(
+                        flex: 1,
+                        fit: .loose,
+                        child: Column(
+                          mainAxisSize: .min,
                           children: [
-                            Checkbox(
-                              checkColor: Colors.white,
-                              fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                                if (states.contains(WidgetState.disabled)) {
-                                  return Colors.amber.withValues(alpha: 0.5);
-                                }
-                                return Colors.amber;
-                              }),
-                              value: imagePrompt.maskInvert,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  imagePrompt.maskInvert = value!;
-                                });
+                            TextFormField(
+                              controller: widthController,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: InputDecoration(
+                                label: Text("Width", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                imagePrompt.width = int.tryParse(value) ?? -1;
+                                painterController.resize(imagePrompt.width, imagePrompt.height);
                               },
                             ),
-                            Text("invert mask", style: inputText),
+                            Slider(
+                              min: 64,
+                              value: double.parse(widthController.text),
+                              max: 1024,
+                              divisions: 15,
+                              onChanged: (double value) {
+                                imagePrompt.width = value.toInt();
+                                widthController.text = value.toString();
+                                painterController.resize(imagePrompt.width, imagePrompt.height);
+                                setState(() {});
+                              },
+                            ),
                           ],
                         ),
-                        MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              label: Text("Context image", style: inputText),
-                              border: inputBorder,
-                              prefixIcon: Icon(Icons.image, color: Colors.black),
+                      ),
+                      Flexible(
+                        flex: 1,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: heightController,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: InputDecoration(
+                                label: Text("Height", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                imagePrompt.height = int.tryParse(value) ?? -1;
+                                painterController.resize(imagePrompt.width, imagePrompt.height);
+                              },
                             ),
-                            keyboardType: TextInputType.text,
-                            readOnly: true,
-                            onTap: () => pickContextImage(),
-                          ),
+                            Slider(
+                              min: 64,
+                              value: double.parse(heightController.text),
+                              max: 1024,
+                              divisions: 15,
+                              onChanged: (double value) {
+                                imagePrompt.height = value.toInt();
+                                painterController.resize(imagePrompt.width, imagePrompt.height);
+                                heightController.text = value.toString();
+                                setState(() {});
+                              },
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Checkbox(
+                        checkColor: Colors.white,
+                        fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                          if (states.contains(WidgetState.disabled)) {
+                            return Colors.amber.withValues(alpha: 0.5);
+                          }
+                          return Colors.amber;
+                        }),
+                        value: imagePrompt.maskInvert,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            imagePrompt.maskInvert = value!;
+                          });
+                        },
+                      ),
+                      Text("invert mask", style: inputText),
+                    ],
+                  ),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        label: Text("Context image", style: inputText),
+                        border: inputBorder,
+                        prefixIcon: Icon(Icons.image, color: Colors.black),
+                      ),
+                      keyboardType: TextInputType.text,
+                      readOnly: true,
+                      onTap: () => pickContextImage(),
                     ),
                   ),
                   Row(
@@ -348,13 +437,12 @@ class _State extends State<GenerateImage> {
                       child: Text('Save image', style: theme.textTheme.bodyLarge),
                       onPressed: () async {
                         try {
-                          AppState provider = Inherited.of(context)!;
-                          var background = painterController.backgroundLayers.first;
+                          var background = painterController.backgroundLayer;
 
                           await FileSaver.instance.saveFile(
-                            name: background.name ?? "default",
+                            name: background?.name ?? "default",
                             mimeType: MimeType.png,
-                            bytes: background.data,
+                            bytes: background?.data,
                           );
                         } catch (err) {
                           print(err.toString());

@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:hive_ce/hive.dart';
+import 'package:flutter/material.dart';
 
 class ImagePrompt {
   double guidance;
@@ -95,5 +97,62 @@ class PromptResponse {
       parameters: json["parameters"],
       info: json["info"],
     );
+  }
+}
+
+class BackgroundImage {
+  int width;
+  int height;
+  final int key;
+  final Uint8List data;
+  final String? mimeType;
+  final String? name;
+  final String date = DateTime.now().toString();
+
+  BackgroundImage({
+    required this.width,
+    required this.height,
+    required this.data,
+    this.name,
+    this.mimeType,
+    this.key = 0,
+  });
+
+  factory BackgroundImage.fromJson(dynamic json) {
+    return BackgroundImage(
+      width: json["width"],
+      height: json["height"],
+      data: json["data"],
+      mimeType: json["mimeType"],
+      name: json["name"],
+      key: json["key"],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "width": width,
+      "height": height,
+      "data": data,
+      "mimeType": mimeType,
+      "name": name,
+      "date": date,
+      "key": key,
+    };
+  }
+}
+
+class ImageAdapter extends TypeAdapter<BackgroundImage> {
+  @override
+  final typeId = 0;
+
+  @override
+  BackgroundImage read(BinaryReader reader) {
+    return BackgroundImage.fromJson(reader.read());
+  }
+
+  @override
+  void write(BinaryWriter writer, BackgroundImage obj) {
+    writer.write(obj.toJson());
   }
 }
