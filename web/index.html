@@ -51,7 +51,7 @@
     }
 
     body {
-        background: rgba(243, 243, 247, 1);
+        background: rgb(81, 81, 198);
     }
 
     @keyframes rotation {
@@ -64,7 +64,14 @@
     } 
 
   </style>
+
   <div class="loader"></div>
   <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelector(".loader").remove();
+    });
+  </script>
 </body>
 </html>

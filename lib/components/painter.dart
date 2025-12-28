@@ -28,11 +28,35 @@ class MyPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
+class BackgroundImage {
+  int width;
+  int height;
+  Uint8List data;
+  String? mimeType;
+  String? name;
+
+  BackgroundImage({required this.width, required this.height, required this.data, this.name, this.mimeType});
+
+  factory BackgroundImage.fromJson(Map<String, dynamic> json) {
+    return BackgroundImage(
+      width: json["width"],
+      height: json["height"],
+      data: json["data"],
+      mimeType: json["mimeType"],
+      name: json["name"],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {"width": width, "height": height, "data": data, "mimeType": mimeType, "name": name};
+  }
+}
+
 class CanvasController extends ChangeNotifier {
   List<DrawingPoint?> points = [];
   Color paintColor;
   double strokeWidth;
-  List<Image> backgroundLayers = [];
+  List<BackgroundImage> backgroundLayers = [];
   CustomPainter? canvas;
 
   CanvasController({this.paintColor = const Color.fromRGBO(255, 254, 254, 0.213), this.strokeWidth = 25.0}) {
@@ -55,23 +79,33 @@ class CanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void resize(int width, int height) {
+    for (var image in backgroundLayers) {
+      image.width = width;
+      image.height = height;
+    }
+
+    recreateCanvas();
+    notifyListeners();
+  }
+
   // void setStrokeWidth(double value) {
   //   strokeWidth = value;
   //   recreateCanvas();
   //   notifyListeners();
   // }
 
-  void addBackground(Image data) {
-    backgroundLayers.add(data);
+  void addBackground(BackgroundImage image) {
+    backgroundLayers.add(image);
     recreateCanvas();
     notifyListeners();
   }
 
-  void setBackground(Image data) {
+  void setBackground(BackgroundImage image) {
     if (backgroundLayers.isEmpty) {
-      backgroundLayers.add(data);
+      backgroundLayers.add(image);
     } else {
-      backgroundLayers[0] = data;
+      backgroundLayers[0] = image;
     }
 
     points.clear();
@@ -79,7 +113,7 @@ class CanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Uint8List?> getImage(Size size, {ImageByteFormat format = .png, double? pixelRatio}) async {
+  Future<Uint8List?> getMaskImage(Size size, {ImageByteFormat format = .png, double? pixelRatio}) async {
     PictureRecorder recorder = PictureRecorder();
     Canvas recordCanvas = Canvas(recorder);
 
@@ -152,7 +186,14 @@ class _State extends State<CanvasPainter> {
         child: Stack(
           children: [
             // 1. The Background Image
-            ...widget.controller.backgroundLayers.map((img) => Align(alignment: AlignmentGeometry.center, child: img)),
+            ...widget.controller.backgroundLayers.map(
+              (img) => Align(
+                alignment: AlignmentGeometry.center,
+                child: Image(
+                  image: ResizeImage(MemoryImage(img.data), width: img.width, height: img.height),
+                ),
+              ),
+            ),
             // 2. The CustomPaint layer
             CustomPaint(painter: widget.controller.canvas, size: size),
           ],

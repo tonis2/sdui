@@ -48,14 +48,6 @@ class ImagePrompt {
     );
   }
 
-  void addExtraImage(Uint8List data) {
-    extraImages.add(data);
-  }
-
-  void addInitImage(Uint8List data) {
-    initImages.add(data);
-  }
-
   Map<String, dynamic> toJson() {
     return {
       "prompt": prompt,
@@ -69,11 +61,24 @@ class ImagePrompt {
       "sampler_name": sampler,
       "denoising_strength": noiseStrenght,
       "mask": mask,
-      "init_images": initImages.map((image) => base64.encode(image)).join(","),
-      "extra_images": extraImages.map((image) => base64.encode(image)).join(","),
+      "init_images": List.from(initImages.map<String>((image) => base64.encode(image))),
+      "extra_images": List.from(extraImages.map<String>((image) => base64.encode(image))),
       "inpainting_mask_invert": maskInvert,
       "n": guidance,
     };
+  }
+
+  void addExtraImage(Uint8List data) {
+    extraImages.add(data);
+  }
+
+  void addInitImage(Uint8List data) {
+    initImages.add(data);
+  }
+
+  void clearImages() {
+    extraImages.clear();
+    initImages.clear();
   }
 }
 

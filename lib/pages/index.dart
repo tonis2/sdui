@@ -1,1 +1,2 @@
-export 'inPaint.dart';
+export 'generateImage.dart';
+export 'gallery.dart';

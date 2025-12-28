@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:localstorage/localstorage.dart';
+import 'menu.dart';
 
 import '/state.dart';
 import '/config.dart';
 import '/pages/index.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:web/web.dart' as web;
 
 class Main extends StatelessWidget {
   AppState state;
@@ -25,17 +24,31 @@ class Main extends StatelessWidget {
   }
 }
 
-void main() {
+var rootNavigatorKey = GlobalKey<NavigatorState>();
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initLocalStorage();
   //usePathUrlStrategy();
-  web.window.document.querySelector(".loader")?.remove();
+  // web.window.document.querySelector(".loader")?.remove();
 
   KoboldApi api = KoboldApi(headers: {}, baseUrl: "http://localhost:5001");
   AppState state = AppState(api: api);
 
-  String activeUrl = Uri.parse(web.window.location.href).path;
+  runApp(Main(state: state));
+}
 
-  runApp(Main(state: state, activeUrl: activeUrl));
+Widget base(Widget child) {
+  // Size size = MediaQuery.sizeOf(rootNavigatorKey.currentState!.context);
+  return Expanded(
+    child: Column(
+      spacing: 10,
+      children: [
+        SizedBox(width: 200, height: 70, child: Menu()),
+        Expanded(child: child),
+      ],
+    ),
+  );
 }
 
 Widget router(AppState appState, String startPage) {
@@ -43,6 +56,7 @@ Widget router(AppState appState, String startPage) {
     debugShowCheckedModeBanner: false,
     title: 'SDUI',
     routerConfig: GoRouter(
+      navigatorKey: rootNavigatorKey,
       observers: [],
       initialLocation: AppRoutes.home,
       routes: [
@@ -51,7 +65,18 @@ Widget router(AppState appState, String startPage) {
           pageBuilder: (context, state) {
             return CustomTransitionPage<void>(
               key: state.pageKey,
-              child: InPaint(),
+              child: base(GenerateImage()),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.gallery,
+          pageBuilder: (context, state) {
+            return CustomTransitionPage<void>(
+              key: state.pageKey,
+              child: base(Gallery()),
               transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                   FadeTransition(opacity: animation, child: child),
             );
@@ -61,5 +86,3 @@ Widget router(AppState appState, String startPage) {
     ),
   );
 }
-
-var rootNavigatorKey = GlobalKey<NavigatorState>();
