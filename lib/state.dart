@@ -24,6 +24,52 @@ Future<AppState> createState({required KoboldApi api}) async {
 class AppState extends ChangeNotifier {
   AppState({required this.api, required this.images});
 
+  ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "");
   KoboldApi api;
   Box<BackgroundImage> images;
+  List<QueueItem> promptQueue = [];
+
+  void _processPrompt(QueueItem item) {
+    bool hasPromptInProccess = promptQueue.where((item) => item.active == true).isNotEmpty;
+
+    if (hasPromptInProccess) return;
+
+    item.active = true;
+    item.startTime = DateTime.now();
+
+    item.promptRequest
+        .then((response) {
+          // Promise finished
+          item.endTime = DateTime.now();
+          item.active = false;
+
+          if (response.images.isNotEmpty) {
+            var newImage = BackgroundImage(
+              width: item.prompt.width,
+              height: item.prompt.height,
+              data: response.images.first,
+              name: response.info,
+            );
+            // painterController.setBackground(newImage);
+            images.add(newImage);
+            notifyListeners();
+          } else {
+            debugPrint("Image processing failed");
+          }
+
+          var unprocessedPrompts = promptQueue.where((item) => item.endTime == null);
+          if (unprocessedPrompts.isNotEmpty) {
+            _processPrompt(unprocessedPrompts.first);
+          }
+        })
+        .catchError((err) {
+          debugPrint(err.toString());
+        });
+  }
+
+  void createPromptRequest(QueueItem item) {
+    promptQueue.add(item);
+    _processPrompt(item);
+    notifyListeners();
+  }
 }

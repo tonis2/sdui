@@ -12,7 +12,7 @@ class ImagePrompt {
   int clipSkip;
   double noiseStrenght;
   String sampler;
-  String? mask;
+  Uint8List? mask;
   List<Uint8List> initImages = [];
   List<Uint8List> extraImages = [];
   bool maskInvert;
@@ -23,7 +23,7 @@ class ImagePrompt {
   ImagePrompt({
     required this.prompt,
     required this.negativePrompt,
-    this.steps = 20,
+    this.steps = 15,
     this.width = 512,
     this.height = 512,
     this.mask,
@@ -62,7 +62,7 @@ class ImagePrompt {
       "clip_skip": clipSkip,
       "sampler_name": sampler,
       "denoising_strength": noiseStrenght,
-      "mask": mask,
+      "mask": mask != null ? base64.encode(mask!) : null,
       "init_images": List.from(initImages.map<String>((image) => base64.encode(image))),
       "extra_images": List.from(extraImages.map<String>((image) => base64.encode(image))),
       "inpainting_mask_invert": maskInvert,
@@ -71,11 +71,19 @@ class ImagePrompt {
   }
 
   void addExtraImage(Uint8List data) {
-    extraImages.add(data);
+    if (extraImages.isEmpty) {
+      extraImages.add(data);
+    } else {
+      extraImages[0] = data;
+    }
   }
 
   void addInitImage(Uint8List data) {
-    initImages.add(data);
+    if (initImages.isEmpty) {
+      initImages.add(data);
+    } else {
+      initImages[0] = data;
+    }
   }
 
   void clearImages() {
@@ -100,6 +108,7 @@ class PromptResponse {
   }
 }
 
+@immutable
 class BackgroundImage extends HiveObject {
   int width;
   int height;
@@ -146,4 +155,15 @@ class ImageAdapter extends TypeAdapter<BackgroundImage> {
   void write(BinaryWriter writer, BackgroundImage obj) {
     writer.write(obj.toJson());
   }
+}
+
+@immutable
+class QueueItem {
+  final ImagePrompt prompt;
+  final Future<PromptResponse> promptRequest;
+  DateTime? endTime;
+  DateTime? startTime;
+  bool active;
+
+  QueueItem({required this.prompt, this.endTime, required this.promptRequest, this.active = false});
 }

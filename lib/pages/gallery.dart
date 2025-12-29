@@ -66,7 +66,7 @@ class _State extends State<Gallery> {
                   child: Text("Delete", style: theme.textTheme.bodyMedium),
                   onPressed: () {
                     // Deletes image from gallery
-                    provider.images.deleteAt(image.key);
+                    image.delete();
                     setState(() {});
                   },
                 ),

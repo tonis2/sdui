@@ -36,7 +36,7 @@ class CanvasController extends ChangeNotifier {
   BackgroundImage? backgroundLayer;
   CustomPainter? canvas;
 
-  CanvasController({this.paintColor = const Color.fromRGBO(255, 254, 254, 0.213), this.strokeWidth = 25.0}) {
+  CanvasController({this.paintColor = const Color.fromRGBO(255, 254, 254, 0.213), this.strokeWidth = 50.0}) {
     canvas = MyPainter(points);
   }
 
@@ -122,9 +122,7 @@ class _State extends State<CanvasPainter> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.sizeOf(context);
 
-    return SizedBox(
-      width: size.width,
-      height: size.height,
+    return Expanded(
       child: GestureDetector(
         onPanUpdate: (details) {
           setState(() {
@@ -149,14 +147,11 @@ class _State extends State<CanvasPainter> {
         child: Stack(
           children: [
             if (widget.controller.backgroundLayer != null)
-              Align(
-                alignment: AlignmentGeometry.center,
-                child: Image(
-                  image: ResizeImage(
-                    MemoryImage(widget.controller.backgroundLayer!.data),
-                    width: widget.controller.backgroundLayer!.width,
-                    height: widget.controller.backgroundLayer!.height,
-                  ),
+              Image(
+                image: ResizeImage(
+                  MemoryImage(widget.controller.backgroundLayer!.data),
+                  width: widget.controller.backgroundLayer!.width,
+                  height: widget.controller.backgroundLayer!.height,
                 ),
               ),
             CustomPaint(painter: widget.controller.canvas, size: size),

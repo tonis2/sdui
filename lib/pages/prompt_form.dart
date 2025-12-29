@@ -5,6 +5,7 @@ import '/components/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import 'package:file_saver/file_saver.dart';
+import 'dart:math';
 
 class GenerateImage extends StatefulWidget {
   @override
@@ -12,52 +13,13 @@ class GenerateImage extends StatefulWidget {
 }
 
 class _State extends State<GenerateImage> {
-  ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "");
   bool loading = false;
 
-  CanvasController painterController = CanvasController();
+  CanvasController painterController = CanvasController(paintColor: Colors.white);
   TextEditingController widthController = TextEditingController();
   TextEditingController heightController = TextEditingController();
   TextEditingController promptController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
-  Future<FilePickerResult?> pickContextImage() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      PlatformFile image = result.files.first;
-      imagePrompt.clearImages();
-
-      painterController.setBackground(
-        BackgroundImage(width: imagePrompt.width, height: imagePrompt.height, data: image.bytes!, name: image.name),
-      );
-
-      imagePrompt.addExtraImage(image.bytes!);
-    } else {
-      print("canceled");
-      // User canceled the picker
-    }
-
-    return result;
-  }
-
-  Future<FilePickerResult?> pickMainImage(int width, int height) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      PlatformFile image = result.files.first;
-      imagePrompt.clearImages();
-
-      painterController.setBackground(
-        BackgroundImage(width: imagePrompt.width, height: imagePrompt.height, data: image.bytes!, name: image.name),
-      );
-
-      imagePrompt.addInitImage(image.bytes!);
-    } else {
-      print("canceled");
-      // User canceled the picker
-    }
-
-    return result;
-  }
 
   @override
   void dispose() {
@@ -70,47 +32,164 @@ class _State extends State<GenerateImage> {
 
   @override
   void initState() {
-    widthController.text = imagePrompt.width.toString();
-    heightController.text = imagePrompt.height.toString();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      AppState provider = Inherited.of(context)!;
+      widthController.text = provider.imagePrompt.width.toString();
+      heightController.text = provider.imagePrompt.height.toString();
+      promptController.text = provider.imagePrompt.prompt.toString();
+
+      setState(() {});
+    });
+
     super.initState();
+  }
+
+  Future<FilePickerResult?> pickImage({bool isExtra = true}) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    AppState provider = Inherited.of(context)!;
+    if (result != null) {
+      PlatformFile image = result.files.first;
+      provider.imagePrompt.clearImages();
+      painterController.clear();
+
+      var decodedImage = await decodeImageFromList(image.bytes!);
+
+      if (decodedImage.width >= decodedImage.height) {
+        double aspect = decodedImage.height / decodedImage.width;
+        int width = min(decodedImage.width, 1024);
+        int height = min(decodedImage.height, 1024);
+        height = (width * aspect).toInt();
+        heightController.text = height.toString();
+        widthController.text = width.toString();
+      }
+
+      if (decodedImage.width <= decodedImage.height) {
+        double aspect = decodedImage.width / decodedImage.height;
+        int width = min(decodedImage.width, 1024);
+        int height = min(decodedImage.height, 1024);
+        width = (height * aspect).toInt();
+        heightController.text = height.toString();
+        widthController.text = width.toString();
+      }
+
+      provider.imagePrompt.width = int.parse(widthController.text);
+      provider.imagePrompt.height = int.parse(heightController.text);
+
+      painterController.setBackground(
+        BackgroundImage(
+          width: int.parse(widthController.text),
+          height: int.parse(heightController.text),
+          data: image.bytes!,
+          name: image.name,
+        ),
+      );
+
+      if (isExtra) {
+        provider.imagePrompt.addExtraImage(image.bytes!);
+      } else {
+        provider.imagePrompt.addInitImage(image.bytes!);
+      }
+      setState(() {});
+    } else {
+      print("canceled");
+      // User canceled the picker
+    }
+
+    return result;
   }
 
   void generateImage() async {
     if (_formKey.currentState!.validate()) {
-      try {
-        AppState provider = Inherited.of(context)!;
-        setState(() {
-          loading = true;
-        });
+      AppState provider = Inherited.of(context)!;
 
-        PromptResponse? response = await provider.api.postImageToImage(imagePrompt);
+      if (painterController.points.isNotEmpty) {
+        provider.imagePrompt.mask = await painterController.getMaskImage(
+          Size(provider.imagePrompt.width.toDouble(), provider.imagePrompt.height.toDouble()),
+        );
 
-        if (mounted) {
-          setState(() {
-            loading = false;
-          });
+        // imagePrompt.initImages.add(imagePrompt.extraImages.first);
 
-          if (response.images.isNotEmpty) {
-            var newImage = BackgroundImage(
-              width: imagePrompt.width,
-              height: imagePrompt.height,
-              data: response.images.first,
-              name: response.info,
-            );
-            painterController.setBackground(newImage);
-            provider.images.add(newImage);
-          }
-        }
-      } catch (err) {
-        print(err.toString());
-
-        if (mounted) {
-          setState(() {
-            loading = false;
-          });
-        }
+        // Save mask for debugging
+        // if (imagePrompt.mask != null)
+        //   await FileSaver.instance.saveFile(name: "default", mimeType: MimeType.png, bytes: imagePrompt.mask);
+        // await FileSaver.instance.saveFile(
+        //   name: "default",
+        //   mimeType: MimeType.png,
+        //   bytes: imagePrompt.extraImages.first,
+        // );
       }
+
+      provider.createPromptRequest(
+        QueueItem(prompt: provider.imagePrompt, promptRequest: provider.api.postImageToImage(provider.imagePrompt)),
+      );
     }
+  }
+
+  Widget queueView() {
+    AppState provider = Inherited.of(context)!;
+    ThemeData theme = Theme.of(context);
+    return Align(
+      alignment: .center,
+      child: SizedBox(
+        width: 500,
+        height: 110,
+        child: SingleChildScrollView(
+          scrollDirection: .horizontal,
+          child: Row(
+            mainAxisSize: .min,
+            mainAxisAlignment: .start,
+            crossAxisAlignment: .start,
+            children: provider.promptQueue.map((item) {
+              MemoryImage image;
+
+              if (item.prompt.extraImages.isNotEmpty) {
+                image = MemoryImage(item.prompt.extraImages.first);
+              } else {
+                image = MemoryImage(item.prompt.initImages.first);
+              }
+
+              return SizedBox(
+                width: 350,
+                child: Row(
+                  mainAxisSize: .min,
+                  mainAxisAlignment: .start,
+                  crossAxisAlignment: .start,
+                  spacing: 10,
+                  children: [
+                    Image(image: ResizeImage(image, width: 60, height: 60)),
+                    Column(
+                      mainAxisSize: .min,
+                      spacing: 5,
+                      children: [
+                        if (item.startTime != null)
+                          Text(
+                            "Start time: ${item.startTime.toString().split(" ")[1]}",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        if (item.endTime != null)
+                          Text("End time: ${item.endTime.toString().split(" ")[1]}", style: theme.textTheme.bodySmall),
+                        if (item.endTime != null && item.startTime != null)
+                          Text(
+                            "Time spent: ${item.endTime!.difference(item.startTime!).toString()}",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                      ],
+                    ),
+                    InkWell(
+                      onTap: () {
+                        provider.promptQueue.retainWhere((item) => item.endTime == null);
+                        setState(() {});
+                      },
+                      child: Icon(Icons.delete_forever, color: theme.colorScheme.secondary),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
   }
 
   FilteringTextInputFormatter doubleInputFilter = FilteringTextInputFormatter.allow(RegExp(r'(^\d*[\.]?\d{0,2})'));
@@ -121,343 +200,349 @@ class _State extends State<GenerateImage> {
     ThemeData theme = Theme.of(context);
     TextStyle? inputText = theme.textTheme.bodyMedium;
     Size size = MediaQuery.sizeOf(context);
+    AppState provider = Inherited.of(context)!;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      child: Row(
-        spacing: 15,
-        children: [
-          Container(
-            width: size.width * 0.45,
-            height: size.height,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: .min,
-                spacing: 10,
-                children: [
-                  Text("Generation options", style: theme.textTheme.bodyLarge),
-                  Divider(),
-                  SizedBox(height: 6),
-                  TextFormField(
-                    controller: promptController,
-                    decoration: InputDecoration(
-                      label: Text("Prompt", style: inputText),
-                      border: inputBorder,
-                    ),
-                    minLines: 2,
-                    maxLines: 10,
-                    keyboardType: TextInputType.multiline,
-                    onChanged: (value) {
-                      imagePrompt.prompt = value;
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a prompt';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    initialValue: imagePrompt.negativePrompt,
-                    decoration: InputDecoration(
-                      label: Text("Negative prompt", style: inputText),
-                      border: inputBorder,
-                    ),
-                    minLines: 2,
-                    maxLines: 10,
-                    keyboardType: TextInputType.multiline,
-                    onChanged: (value) {
-                      imagePrompt.negativePrompt = value;
-                    },
-                  ),
-                  Flex(
-                    direction: Axis.horizontal,
+      width: size.width,
+      height: size.height,
+      child: SingleChildScrollView(
+        child: SizedBox(
+          height: 900 + provider.imagePrompt.height.toDouble(),
+          child: Column(
+            spacing: 10,
+            children: [
+              if (provider.promptQueue.isNotEmpty) queueView(),
+              Container(
+                width: size.width * 0.45,
+                height: 600,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: .min,
                     spacing: 10,
                     children: [
-                      Flexible(
-                        flex: 2,
-                        child: TextFormField(
-                          initialValue: imagePrompt.seed.toString(),
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            label: Text("Seed", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            imagePrompt.seed = int.tryParse(value) ?? -1;
-                          },
+                      Text("Generation options", style: theme.textTheme.bodyLarge),
+                      Divider(),
+                      SizedBox(height: 6),
+                      TextFormField(
+                        controller: promptController,
+                        decoration: InputDecoration(
+                          label: Text("Prompt", style: inputText),
+                          border: inputBorder,
                         ),
-                      ),
-                      Flexible(
-                        flex: 2,
-                        child: TextFormField(
-                          initialValue: imagePrompt.sampler,
-                          decoration: InputDecoration(
-                            label: Text("Sampler", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.text,
-                          onChanged: (value) {
-                            imagePrompt.sampler = value;
-                          },
-                        ),
-                      ),
-                      Flexible(
-                        flex: 2,
-                        child: TextFormField(
-                          initialValue: imagePrompt.steps.toString(),
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            label: Text("Steps", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            imagePrompt.steps = int.tryParse(value) ?? -1;
-                          },
-                        ),
-                      ),
-                      Flexible(
-                        flex: 2,
-                        child: TextFormField(
-                          initialValue: imagePrompt.guidance.toString(),
-                          inputFormatters: [doubleInputFilter],
-                          decoration: InputDecoration(
-                            label: Text("Guidance (CFG)", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            imagePrompt.guidance = double.tryParse(value) ?? 1;
-                          },
-                        ),
-                      ),
-                      Flexible(
-                        flex: 2,
-                        child: TextFormField(
-                          initialValue: imagePrompt.noiseStrenght.toString(),
-                          inputFormatters: [doubleInputFilter],
-                          decoration: InputDecoration(
-                            label: Text("Denoise strength", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            imagePrompt.noiseStrenght = double.tryParse(value) ?? 4;
-                          },
-                        ),
-                      ),
-                      Flexible(
-                        flex: 2,
-                        child: TextFormField(
-                          initialValue: "default",
-                          decoration: InputDecoration(
-                            label: Text("Scheduler", style: inputText),
-                            border: inputBorder,
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            // imagePrompt.noiseStrenght = double.tryParse(value) ?? 4;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  Flex(
-                    direction: .horizontal,
-                    spacing: 10,
-                    mainAxisAlignment: .start,
-                    crossAxisAlignment: .start,
-                    children: [
-                      Flexible(
-                        flex: 1,
-                        fit: .loose,
-                        child: Column(
-                          mainAxisSize: .min,
-                          children: [
-                            TextFormField(
-                              controller: widthController,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              decoration: InputDecoration(
-                                label: Text("Width", style: inputText),
-                                border: inputBorder,
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) {
-                                imagePrompt.width = int.tryParse(value) ?? -1;
-                                painterController.resize(imagePrompt.width, imagePrompt.height);
-                              },
-                            ),
-                            Slider(
-                              min: 64,
-                              value: double.parse(widthController.text),
-                              max: 1024,
-                              divisions: 15,
-                              onChanged: (double value) {
-                                imagePrompt.width = value.toInt();
-                                widthController.text = value.toString();
-                                painterController.resize(imagePrompt.width, imagePrompt.height);
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      Flexible(
-                        flex: 1,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: heightController,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              decoration: InputDecoration(
-                                label: Text("Height", style: inputText),
-                                border: inputBorder,
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) {
-                                imagePrompt.height = int.tryParse(value) ?? -1;
-                                painterController.resize(imagePrompt.width, imagePrompt.height);
-                              },
-                            ),
-                            Slider(
-                              min: 64,
-                              value: double.parse(heightController.text),
-                              max: 1024,
-                              divisions: 15,
-                              onChanged: (double value) {
-                                imagePrompt.height = value.toInt();
-                                painterController.resize(imagePrompt.width, imagePrompt.height);
-                                heightController.text = value.toString();
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Checkbox(
-                        checkColor: Colors.white,
-                        fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                          if (states.contains(WidgetState.disabled)) {
-                            return Colors.amber.withValues(alpha: 0.5);
+                        minLines: 2,
+                        maxLines: 10,
+                        keyboardType: TextInputType.multiline,
+                        onChanged: (value) {
+                          provider.imagePrompt.prompt = value;
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a prompt';
                           }
-                          return Colors.amber;
-                        }),
-                        value: imagePrompt.maskInvert,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            imagePrompt.maskInvert = value!;
-                          });
+                          return null;
                         },
                       ),
-                      Text("invert mask", style: inputText),
-                    ],
-                  ),
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        label: Text("Context image", style: inputText),
-                        border: inputBorder,
-                        prefixIcon: Icon(Icons.image, color: Colors.black),
-                      ),
-                      keyboardType: TextInputType.text,
-                      readOnly: true,
-                      onTap: () => pickContextImage(),
-                    ),
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      SizedBox(
-                        width: 150,
-                        height: 60,
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: TextFormField(
-                            decoration: InputDecoration(
-                              label: Text("Pick main image", style: inputText),
-                              border: inputBorder,
-                              prefixIcon: Icon(Icons.image, color: Colors.black),
-                            ),
-                            keyboardType: TextInputType.text,
-                            readOnly: true,
-                            onTap: () => pickMainImage(imagePrompt.width, imagePrompt.height),
-                          ),
+                      TextFormField(
+                        initialValue: provider.imagePrompt.negativePrompt,
+                        decoration: InputDecoration(
+                          label: Text("Negative prompt", style: inputText),
+                          border: inputBorder,
                         ),
+                        minLines: 2,
+                        maxLines: 10,
+                        keyboardType: TextInputType.multiline,
+                        onChanged: (value) {
+                          provider.imagePrompt.negativePrompt = value;
+                        },
+                      ),
+                      Flex(
+                        direction: Axis.horizontal,
+                        spacing: 10,
+                        children: [
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.seed.toString(),
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: InputDecoration(
+                                label: Text("Seed", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                provider.imagePrompt.seed = int.tryParse(value) ?? -1;
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.sampler,
+                              decoration: InputDecoration(
+                                label: Text("Sampler", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.text,
+                              onChanged: (value) {
+                                provider.imagePrompt.sampler = value;
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.steps.toString(),
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: InputDecoration(
+                                label: Text("Steps", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                provider.imagePrompt.steps = int.tryParse(value) ?? -1;
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.guidance.toString(),
+                              inputFormatters: [doubleInputFilter],
+                              decoration: InputDecoration(
+                                label: Text("Guidance (CFG)", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                provider.imagePrompt.guidance = double.tryParse(value) ?? 1;
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.noiseStrenght.toString(),
+                              inputFormatters: [doubleInputFilter],
+                              decoration: InputDecoration(
+                                label: Text("Denoise strength", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                provider.imagePrompt.noiseStrenght = double.tryParse(value) ?? 4;
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: "default",
+                              decoration: InputDecoration(
+                                label: Text("Scheduler", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                // imagePrompt.noiseStrenght = double.tryParse(value) ?? 4;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      Flex(
+                        direction: .horizontal,
+                        spacing: 10,
+                        mainAxisAlignment: .start,
+                        crossAxisAlignment: .start,
+                        children: [
+                          Flexible(
+                            flex: 1,
+                            fit: .loose,
+                            child: Column(
+                              mainAxisSize: .min,
+                              children: [
+                                TextFormField(
+                                  controller: widthController,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  decoration: InputDecoration(
+                                    label: Text("Width", style: inputText),
+                                    border: inputBorder,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    provider.imagePrompt.width = int.tryParse(value) ?? -1;
+                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                  },
+                                ),
+                                Slider(
+                                  min: 64,
+                                  value: double.parse(widthController.text),
+                                  max: 1024,
+                                  divisions: 15,
+                                  onChanged: (double value) {
+                                    provider.imagePrompt.width = value.toInt();
+                                    widthController.text = value.toString();
+                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                    setState(() {});
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          Flexible(
+                            flex: 1,
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: heightController,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  decoration: InputDecoration(
+                                    label: Text("Height", style: inputText),
+                                    border: inputBorder,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    provider.imagePrompt.height = int.tryParse(value) ?? -1;
+                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                  },
+                                ),
+                                Slider(
+                                  min: 64,
+                                  value: double.parse(heightController.text),
+                                  max: 1024,
+                                  divisions: 15,
+                                  onChanged: (double value) {
+                                    provider.imagePrompt.height = value.toInt();
+                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                    heightController.text = value.toString();
+                                    setState(() {});
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Flex(
+                        direction: .horizontal,
+                        spacing: 10,
+                        mainAxisAlignment: .start,
+                        crossAxisAlignment: .start,
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                checkColor: Colors.white,
+                                fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.disabled)) {
+                                    return Colors.amber.withValues(alpha: 0.5);
+                                  }
+                                  return Colors.amber;
+                                }),
+                                value: provider.imagePrompt.maskInvert,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    provider.imagePrompt.maskInvert = value!;
+                                  });
+                                },
+                              ),
+                              Text("invert mask", style: inputText),
+                            ],
+                          ),
+                          Flexible(
+                            child: TextButton(onPressed: pickImage, child: Text("Pick context image")),
+                          ),
+                          Flexible(
+                            child: TextButton(
+                              onPressed: () => pickImage(isExtra: false),
+                              child: Text("Pick main image"),
+                            ),
+                          ),
+                          // Flexible(
+                          //   child: TextButton(
+                          //     onPressed: () async {
+                          //       FilePickerResult? result = await FilePicker.platform.pickFiles();
+                          //       if (result != null) {
+                          //         PlatformFile image = result.files.first;
+                          //         provider.imagePrompt.mask = image.bytes;
+                          //       }
+                          //     },
+                          //     child: Text("Pick mask"),
+                          //   ),
+                          // ),
+                          Flexible(
+                            child: TextButton(
+                              onPressed: () async {
+                                painterController.clear();
+                                setState(() {});
+                              },
+                              child: Text("Reset canvas"),
+                            ),
+                          ),
+                        ],
                       ),
                       TextButton(
-                        child: Text('Generate image', style: theme.textTheme.bodyLarge),
                         onPressed: generateImage,
+                        child: Text('Generate image', style: theme.textTheme.bodyLarge),
                       ),
                     ],
+                  ),
+                ),
+              ),
+              Container(
+                width: provider.imagePrompt.width.toDouble(),
+                height: provider.imagePrompt.height.toDouble(),
+                decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(5)),
+
+                margin: EdgeInsets.all(25),
+                child: CanvasPainter(controller: painterController),
+              ),
+              Row(
+                crossAxisAlignment: .center,
+                mainAxisAlignment: .center,
+                children: [
+                  SizedBox(
+                    width: 70,
+                    height: 40,
+                    child: TextFormField(
+                      initialValue: painterController.strokeWidth.toString(),
+                      decoration: InputDecoration(
+                        label: Text("Stroke", style: inputText),
+                        border: inputBorder,
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        painterController.strokeWidth = double.parse(value);
+                      },
+                    ),
+                  ),
+                  TextButton(
+                    child: Text('Save image', style: theme.textTheme.bodyLarge),
+                    onPressed: () async {
+                      try {
+                        var background = painterController.backgroundLayer;
+
+                        await FileSaver.instance.saveFile(
+                          name: background?.name ?? "default",
+                          mimeType: MimeType.png,
+                          bytes: background?.data,
+                        );
+                      } catch (err) {
+                        print(err.toString());
+
+                        setState(() {
+                          loading = false;
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-          Expanded(
-            child: Column(
-              children: [
-                if (loading) CircularProgressIndicator(),
-                if (!loading)
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(5)),
-                      padding: EdgeInsets.all(10),
-                      margin: EdgeInsets.all(25),
-                      child: CanvasPainter(controller: painterController),
-                    ),
-                  ),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 70,
-                      height: 40,
-                      child: TextFormField(
-                        initialValue: painterController.strokeWidth.toString(),
-                        decoration: InputDecoration(
-                          label: Text("Stroke", style: inputText),
-                          border: inputBorder,
-                        ),
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          painterController.strokeWidth = double.parse(value);
-                        },
-                      ),
-                    ),
-                    TextButton(
-                      child: Text('Save image', style: theme.textTheme.bodyLarge),
-                      onPressed: () async {
-                        try {
-                          var background = painterController.backgroundLayer;
-
-                          await FileSaver.instance.saveFile(
-                            name: background?.name ?? "default",
-                            mimeType: MimeType.png,
-                            bytes: background?.data,
-                          );
-                        } catch (err) {
-                          print(err.toString());
-
-                          setState(() {
-                            loading = false;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
