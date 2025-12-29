@@ -89,6 +89,7 @@ class ImagePrompt {
   void clearImages() {
     extraImages.clear();
     initImages.clear();
+    mask = null;
   }
 }
 
@@ -164,6 +165,7 @@ class QueueItem {
   DateTime? endTime;
   DateTime? startTime;
   bool active;
+  Uint8List? image;
 
-  QueueItem({required this.prompt, this.endTime, required this.promptRequest, this.active = false});
+  QueueItem({required this.prompt, this.endTime, required this.promptRequest, this.image, this.active = false});
 }

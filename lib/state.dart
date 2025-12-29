@@ -50,6 +50,7 @@ class AppState extends ChangeNotifier {
               data: response.images.first,
               name: response.info,
             );
+
             // painterController.setBackground(newImage);
             images.add(newImage);
             notifyListeners();
@@ -69,6 +70,7 @@ class AppState extends ChangeNotifier {
 
   void createPromptRequest(QueueItem item) {
     promptQueue.add(item);
+    item.image = item.prompt.extraImages.firstOrNull;
     _processPrompt(item);
     notifyListeners();
   }

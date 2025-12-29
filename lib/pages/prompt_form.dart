@@ -44,14 +44,18 @@ class _State extends State<GenerateImage> {
     super.initState();
   }
 
+  void clearImages() {
+    AppState provider = Inherited.of(context)!;
+    painterController.clear();
+    provider.imagePrompt.clearImages();
+  }
+
   Future<FilePickerResult?> pickImage({bool isExtra = true}) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     AppState provider = Inherited.of(context)!;
     if (result != null) {
       PlatformFile image = result.files.first;
-      provider.imagePrompt.clearImages();
-      painterController.clear();
-
+      clearImages();
       var decodedImage = await decodeImageFromList(image.bytes!);
 
       if (decodedImage.width >= decodedImage.height) {
@@ -140,12 +144,10 @@ class _State extends State<GenerateImage> {
             mainAxisAlignment: .start,
             crossAxisAlignment: .start,
             children: provider.promptQueue.map((item) {
-              MemoryImage image;
+              MemoryImage? image;
 
-              if (item.prompt.extraImages.isNotEmpty) {
-                image = MemoryImage(item.prompt.extraImages.first);
-              } else {
-                image = MemoryImage(item.prompt.initImages.first);
+              if (item.image != null) {
+                image = MemoryImage(item.image!);
               }
 
               return SizedBox(
@@ -156,7 +158,7 @@ class _State extends State<GenerateImage> {
                   crossAxisAlignment: .start,
                   spacing: 10,
                   children: [
-                    Image(image: ResizeImage(image, width: 60, height: 60)),
+                    if (image != null) Image(image: ResizeImage(image, width: 60, height: 60)),
                     Column(
                       mainAxisSize: .min,
                       spacing: 5,
@@ -472,15 +474,15 @@ class _State extends State<GenerateImage> {
                           //     child: Text("Pick mask"),
                           //   ),
                           // ),
-                          Flexible(
-                            child: TextButton(
-                              onPressed: () async {
-                                painterController.clear();
-                                setState(() {});
-                              },
-                              child: Text("Reset canvas"),
-                            ),
-                          ),
+                          // Flexible(
+                          //   child: TextButton(
+                          //     onPressed: () async {
+                          //       clearImages();
+                          //       setState(() {});
+                          //     },
+                          //     child: Text("Reset canvas"),
+                          //   ),
+                          // ),
                         ],
                       ),
                       TextButton(
@@ -495,8 +497,7 @@ class _State extends State<GenerateImage> {
                 width: provider.imagePrompt.width.toDouble(),
                 height: provider.imagePrompt.height.toDouble(),
                 decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(5)),
-
-                margin: EdgeInsets.all(25),
+                margin: EdgeInsets.only(top: 10, bottom: 15),
                 child: CanvasPainter(controller: painterController),
               ),
               Row(

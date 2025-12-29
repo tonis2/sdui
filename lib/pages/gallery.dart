@@ -27,11 +27,16 @@ class _State extends State<Gallery> {
 
   void openGallery(BackgroundImage image) {
     AppState provider = Inherited.of(context)!;
+    int imageIndex = 0;
+
+    for (var value in provider.images.keys.indexed) {
+      if (image.key == value.$2) imageIndex = value.$1;
+    }
 
     SwipeImageGallery(
       context: context,
       transitionDuration: 200,
-      initialIndex: image.key,
+      initialIndex: imageIndex,
       children: provider.images.values
           .map(
             (img) => InkWell(
@@ -100,6 +105,7 @@ class _State extends State<Gallery> {
         minItemWidth: 150, // The minimum item width (can be smaller, if the layout constraints are smaller)
         minItemsPerRow: 2, // The minimum items to show in a single row. Takes precedence over minItemWidth
         maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
+
         listViewBuilderOptions:
             ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
         children: provider.images.values
