@@ -28,6 +28,8 @@ class _State extends State<Gallery> {
   void openGallery(BackgroundImage image) {
     AppState provider = Inherited.of(context)!;
     int imageIndex = 0;
+    ThemeData theme = Theme.of(context);
+    Size size = MediaQuery.sizeOf(context);
 
     for (var value in provider.images.keys.indexed) {
       if (image.key == value.$2) imageIndex = value.$1;
@@ -43,7 +45,22 @@ class _State extends State<Gallery> {
               onTap: () {
                 context.pop();
               },
-              child: Image.memory(img.data),
+              child: Container(
+                height: size.height,
+                child: Stack(
+                  children: [
+                    Align(alignment: .center, child: Image.memory(img.data)),
+                    if (img.prompt != null)
+                      Align(
+                        alignment: .bottomCenter,
+                        child: Text(
+                          img.prompt!,
+                          style: theme.textTheme.bodyLarge?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           )
           .toList(),

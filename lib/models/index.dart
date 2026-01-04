@@ -116,9 +116,17 @@ class BackgroundImage extends HiveObject {
   final Uint8List data;
   final String? mimeType;
   final String? name;
+  final String? prompt;
   final String date = DateTime.now().toString();
 
-  BackgroundImage({required this.width, required this.height, required this.data, this.name, this.mimeType});
+  BackgroundImage({
+    required this.width,
+    required this.height,
+    required this.data,
+    this.name,
+    this.mimeType,
+    this.prompt,
+  });
 
   factory BackgroundImage.fromJson(dynamic json) {
     return BackgroundImage(
@@ -127,6 +135,7 @@ class BackgroundImage extends HiveObject {
       data: json["data"],
       mimeType: json["mimeType"],
       name: json["name"],
+      prompt: json["prompt"],
     );
   }
 
@@ -139,6 +148,7 @@ class BackgroundImage extends HiveObject {
       "name": name,
       "date": date,
       "key": key,
+      "prompt": prompt,
     };
   }
 }
@@ -164,8 +174,8 @@ class QueueItem {
   final Future<PromptResponse> promptRequest;
   DateTime? endTime;
   DateTime? startTime;
-  bool active;
   Uint8List? image;
+  bool active;
 
   QueueItem({required this.prompt, this.endTime, required this.promptRequest, this.image, this.active = false});
 }

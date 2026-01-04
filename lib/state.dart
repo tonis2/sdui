@@ -49,6 +49,7 @@ class AppState extends ChangeNotifier {
               height: item.prompt.height,
               data: response.images.first,
               name: response.info,
+              prompt: item.prompt.prompt,
             );
 
             // painterController.setBackground(newImage);
