@@ -53,7 +53,7 @@ class _State extends State<Gallery> {
                     if (img.prompt != null)
                       Align(
                         alignment: .bottomCenter,
-                        child: Text(
+                        child: SelectableText(
                           img.prompt!,
                           style: theme.textTheme.bodyMedium?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9)),
                         ),

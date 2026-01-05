@@ -39,21 +39,23 @@ class AppState extends ChangeNotifier {
 
     item.promptRequest
         .then((response) {
+          QueueItem lastPrompt = promptQueue.firstWhere((item) => item.active == true);
+
           // Promise finished
-          item.endTime = DateTime.now();
-          item.active = false;
+          lastPrompt.endTime = DateTime.now();
+          lastPrompt.active = false;
 
           if (response.images.isNotEmpty) {
-            var newImage = BackgroundImage(
-              width: item.prompt.width,
-              height: item.prompt.height,
-              data: response.images.first,
-              name: response.info,
-              prompt: item.prompt.prompt,
-            );
-
             // painterController.setBackground(newImage);
-            images.add(newImage);
+            images.add(
+              BackgroundImage(
+                width: lastPrompt.prompt.width,
+                height: lastPrompt.prompt.height,
+                prompt: lastPrompt.prompt.prompt,
+                data: response.images.first,
+                name: response.info,
+              ),
+            );
             notifyListeners();
           } else {
             debugPrint("Image processing failed");
