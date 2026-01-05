@@ -210,14 +210,14 @@ class _State extends State<GenerateImage> {
       height: size.height,
       child: SingleChildScrollView(
         child: SizedBox(
-          height: 900 + provider.imagePrompt.height.toDouble(),
+          height: 950 + provider.imagePrompt.height.toDouble(),
           child: Column(
             spacing: 10,
             children: [
               if (provider.promptQueue.isNotEmpty) queueView(),
               Container(
                 width: size.width * 0.45,
-                height: 600,
+                height: 700,
                 child: Form(
                   key: _formKey,
                   child: Column(

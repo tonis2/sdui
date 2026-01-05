@@ -55,7 +55,7 @@ class _State extends State<Gallery> {
                         alignment: .bottomCenter,
                         child: Text(
                           img.prompt!,
-                          style: theme.textTheme.bodyLarge?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9)),
+                          style: theme.textTheme.bodyMedium?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9)),
                         ),
                       ),
                   ],
