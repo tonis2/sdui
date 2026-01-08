@@ -10,6 +10,7 @@ class ImagePrompt {
   int height;
   int seed;
   int clipSkip;
+  int frames;
   double noiseStrenght;
   String sampler;
   Uint8List? mask;
@@ -26,12 +27,13 @@ class ImagePrompt {
     this.steps = 15,
     this.width = 512,
     this.height = 512,
+    this.frames = 0,
     this.mask,
     this.seed = -1,
-    this.clipSkip = -1,
+    this.clipSkip = 0,
     this.guidance = 1,
     this.noiseStrenght = 0.6,
-    this.sampler = "euler",
+    this.sampler = "Euler",
     this.maskInvert = false,
   });
 
@@ -47,6 +49,7 @@ class ImagePrompt {
       sampler: json["sampler_name"],
       noiseStrenght: json["denoising_strength"],
       mask: json["mask"],
+      frames: json["frames"],
     );
   }
 
@@ -67,23 +70,16 @@ class ImagePrompt {
       "extra_images": List.from(extraImages.map<String>((image) => base64.encode(image))),
       "inpainting_mask_invert": maskInvert,
       "n": guidance,
+      "frames": frames,
     };
   }
 
   void addExtraImage(Uint8List data) {
-    if (extraImages.isEmpty) {
-      extraImages.add(data);
-    } else {
-      extraImages[0] = data;
-    }
+    extraImages.add(data);
   }
 
   void addInitImage(Uint8List data) {
-    if (initImages.isEmpty) {
-      initImages.add(data);
-    } else {
-      initImages[0] = data;
-    }
+    initImages.add(data);
   }
 
   void clearImages() {

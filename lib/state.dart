@@ -1,7 +1,7 @@
 import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter/material.dart';
 import '/services/api.dart';
-
+import '/components/index.dart';
 export '/services/api.dart';
 import '/models/index.dart';
 
@@ -24,15 +24,16 @@ Future<AppState> createState({required KoboldApi api}) async {
 class AppState extends ChangeNotifier {
   AppState({required this.api, required this.images});
 
+  CanvasController painterController = CanvasController(paintColor: Colors.white);
   ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "");
   KoboldApi api;
   Box<BackgroundImage> images;
   List<QueueItem> promptQueue = [];
+  int imagesOnPage = 15;
 
   void _processPrompt(QueueItem item) {
-    bool hasPromptInProccess = promptQueue.where((item) => item.active == true).isNotEmpty;
-
-    if (hasPromptInProccess) return;
+    // Dont send new prompt, if one is already in progress
+    if (promptQueue.where((item) => item.active == true).isNotEmpty) return;
 
     item.active = true;
     item.startTime = DateTime.now();
@@ -71,10 +72,44 @@ class AppState extends ChangeNotifier {
         });
   }
 
-  void createPromptRequest(QueueItem item) {
-    promptQueue.add(item);
-    item.image = item.prompt.extraImages.firstOrNull;
-    _processPrompt(item);
+  void clearImages() {
+    painterController.clear();
+    imagePrompt.clearImages();
+    notifyListeners();
+  }
+
+  void createPromptRequest(ImagePrompt prompt) async {
+    var queue = QueueItem(
+      prompt: ImagePrompt(
+        prompt: prompt.prompt,
+        negativePrompt: prompt.negativePrompt,
+        maskInvert: prompt.maskInvert,
+        width: prompt.width,
+        height: prompt.height,
+        guidance: prompt.guidance,
+        noiseStrenght: prompt.noiseStrenght,
+        sampler: prompt.sampler,
+        seed: prompt.seed,
+        steps: prompt.steps,
+      ),
+      image: prompt.extraImages.firstOrNull,
+      promptRequest: api.postImageToImage(prompt),
+    );
+
+    if (painterController.points.isNotEmpty) {
+      prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
+
+      // Save mask for debugging
+      // await FileSaver.instance.saveFile(name: "default", mimeType: MimeType.png, bytes: provider.imagePrompt.mask);
+      // await FileSaver.instance.saveFile(
+      //   name: "default",
+      //   mimeType: MimeType.png,
+      //   bytes: provider.imagePrompt.extraImages.first,
+      // );
+    }
+
+    promptQueue.add(queue);
+    _processPrompt(queue);
     notifyListeners();
   }
 }

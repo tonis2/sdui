@@ -17,6 +17,8 @@ class MyPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    //canvas.drawRect(Rect.fromLTRB(0, 0, size.width, size.height), Paint()..color = Colors.black);
+
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {
         // Draw a line between two consecutive points
@@ -36,7 +38,7 @@ class CanvasController extends ChangeNotifier {
   BackgroundImage? backgroundLayer;
   CustomPainter? canvas;
 
-  CanvasController({this.paintColor = const Color.fromRGBO(255, 254, 254, 0.213), this.strokeWidth = 50.0}) {
+  CanvasController({this.paintColor = const Color.fromARGB(255, 255, 255, 255), this.strokeWidth = 90.0}) {
     canvas = MyPainter(points);
   }
 
@@ -95,7 +97,9 @@ class CanvasController extends ChangeNotifier {
 class CanvasPainter extends StatefulWidget {
   CanvasController controller;
 
-  CanvasPainter({required this.controller, super.key});
+  Size size;
+
+  CanvasPainter({required this.controller, required this.size, super.key});
 
   @override
   State<CanvasPainter> createState() => _State();
@@ -120,8 +124,6 @@ class _State extends State<CanvasPainter> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.sizeOf(context);
-
     return Expanded(
       child: GestureDetector(
         onPanUpdate: (details) {
@@ -130,7 +132,7 @@ class _State extends State<CanvasPainter> {
             var offset = renderBox.globalToLocal(details.globalPosition);
 
             // over the box borders
-            if (offset.dx < 0 || offset.dy < 0 || offset.dx > size.width || offset.dy > size.height) return;
+            if (offset.dx < 0 || offset.dy < 0) return;
 
             widget.controller.addPoint(
               DrawingPoint(
@@ -154,7 +156,7 @@ class _State extends State<CanvasPainter> {
                   height: widget.controller.backgroundLayer!.height,
                 ),
               ),
-            CustomPaint(painter: widget.controller.canvas, size: size),
+            CustomPaint(painter: widget.controller.canvas, size: widget.size),
           ],
         ),
       ),

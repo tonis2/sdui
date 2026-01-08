@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sdui/config.dart';
 import '/components/index.dart';
 import '/models/index.dart';
 import '/state.dart';
@@ -16,12 +17,10 @@ class Gallery extends StatefulWidget {
 }
 
 class _State extends State<Gallery> {
+  int activePage = 0;
+
   @override
   void initState() {
-    // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    //   AppState provider = Inherited.of(context)!;
-    //   setState(() {});
-    // });
     super.initState();
   }
 
@@ -76,37 +75,55 @@ class _State extends State<Gallery> {
         children: [
           Image.memory(image.data),
           Positioned(
-            bottom: 0,
-            left: 0,
-            child: Row(
-              spacing: 10,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            right: 5,
+            top: 5,
+            child: Container(
+              padding: EdgeInsets.all(5),
+              color: Colors.blueGrey,
+              child: Column(
+                spacing: 10,
+                children: [
+                  InkWell(
+                    child: Tooltip(
+                      message: "Delete",
+                      child: Icon(Icons.delete, color: Colors.white),
+                    ),
+                    onTap: () {
+                      image.delete();
+                      setState(() {});
+                    },
                   ),
-                  child: Text("Delete", style: theme.textTheme.bodyMedium),
-                  onPressed: () {
-                    // Deletes image from gallery
-                    image.delete();
-                    setState(() {});
-                  },
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  InkWell(
+                    child: Tooltip(
+                      message: "Save",
+                      child: Icon(Icons.save, color: Colors.white),
+                    ),
+                    onTap: () async {
+                      await FileSaver.instance.saveFile(
+                        name: image.name ?? "default",
+                        mimeType: MimeType.png,
+                        bytes: image.data,
+                      );
+                    },
                   ),
-                  child: Text("Save", style: theme.textTheme.bodyMedium),
-                  onPressed: () async {
-                    // Deletes image from gallery
-                    await FileSaver.instance.saveFile(
-                      name: image.name ?? "default",
-                      mimeType: MimeType.png,
-                      bytes: image.data,
-                    );
-                  },
-                ),
-              ],
+                  InkWell(
+                    child: Tooltip(
+                      message: "Use for prompt",
+                      child: Icon(Icons.edit, color: Colors.white),
+                    ),
+                    onTap: () async {
+                      provider.clearImages();
+                      provider.painterController.setBackground(
+                        BackgroundImage(width: image.width, height: image.height, data: image.data, name: image.name),
+                      );
+                      provider.imagePrompt.addExtraImage(image.data);
+                      provider.imagePrompt.width = image.width;
+                      provider.imagePrompt.height = image.height;
+                      context.go(AppRoutes.home);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -143,6 +160,20 @@ class _State extends State<Gallery> {
         children: [
           if (provider.images.values.isEmpty) Text("Gallery is empty", style: theme.textTheme.bodyLarge),
           if (provider.images.isNotEmpty) galleryView(),
+
+          if (provider.images.length > provider.imagesOnPage)
+            Padding(
+              padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
+              child: Pagination(
+                activePage: 1,
+                totalPages: (provider.images.length / provider.imagesOnPage).toInt(),
+                onSelect: (page) {
+                  setState(() {
+                    activePage = page;
+                  });
+                },
+              ),
+            ),
         ],
       ),
     );

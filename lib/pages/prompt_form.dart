@@ -15,7 +15,6 @@ class GenerateImage extends StatefulWidget {
 class _State extends State<GenerateImage> {
   bool loading = false;
 
-  CanvasController painterController = CanvasController(paintColor: Colors.white);
   TextEditingController widthController = TextEditingController();
   TextEditingController heightController = TextEditingController();
   TextEditingController promptController = TextEditingController();
@@ -23,7 +22,6 @@ class _State extends State<GenerateImage> {
 
   @override
   void dispose() {
-    painterController.dispose();
     widthController.dispose();
     heightController.dispose();
     promptController.dispose();
@@ -44,18 +42,12 @@ class _State extends State<GenerateImage> {
     super.initState();
   }
 
-  void clearImages() {
-    AppState provider = Inherited.of(context)!;
-    painterController.clear();
-    provider.imagePrompt.clearImages();
-  }
-
   Future<FilePickerResult?> pickImage({bool isExtra = true}) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     AppState provider = Inherited.of(context)!;
     if (result != null) {
       PlatformFile image = result.files.first;
-      clearImages();
+      // clearImages();
       var decodedImage = await decodeImageFromList(image.bytes!);
 
       if (decodedImage.width >= decodedImage.height) {
@@ -79,7 +71,7 @@ class _State extends State<GenerateImage> {
       provider.imagePrompt.width = int.parse(widthController.text);
       provider.imagePrompt.height = int.parse(heightController.text);
 
-      painterController.setBackground(
+      provider.painterController.setBackground(
         BackgroundImage(
           width: int.parse(widthController.text),
           height: int.parse(heightController.text),
@@ -103,30 +95,12 @@ class _State extends State<GenerateImage> {
   }
 
   void generateImage() async {
+    AppState provider = Inherited.of(context)!;
     if (_formKey.currentState!.validate()) {
-      AppState provider = Inherited.of(context)!;
-
-      if (painterController.points.isNotEmpty) {
-        provider.imagePrompt.mask = await painterController.getMaskImage(
-          Size(provider.imagePrompt.width.toDouble(), provider.imagePrompt.height.toDouble()),
-        );
-
-        // imagePrompt.initImages.add(imagePrompt.extraImages.first);
-
-        // Save mask for debugging
-        // if (imagePrompt.mask != null)
-        //   await FileSaver.instance.saveFile(name: "default", mimeType: MimeType.png, bytes: imagePrompt.mask);
-        // await FileSaver.instance.saveFile(
-        //   name: "default",
-        //   mimeType: MimeType.png,
-        //   bytes: imagePrompt.extraImages.first,
-        // );
-      }
-
-      provider.createPromptRequest(
-        QueueItem(prompt: provider.imagePrompt, promptRequest: provider.api.postImageToImage(provider.imagePrompt)),
-      );
+      provider.createPromptRequest(provider.imagePrompt);
     }
+
+    provider.clearImages();
   }
 
   Widget queueView() {
@@ -375,7 +349,10 @@ class _State extends State<GenerateImage> {
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     provider.imagePrompt.width = int.tryParse(value) ?? -1;
-                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                    provider.painterController.resize(
+                                      provider.imagePrompt.width,
+                                      provider.imagePrompt.height,
+                                    );
                                   },
                                 ),
                                 Slider(
@@ -386,7 +363,10 @@ class _State extends State<GenerateImage> {
                                   onChanged: (double value) {
                                     provider.imagePrompt.width = value.toInt();
                                     widthController.text = value.toString();
-                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                    provider.painterController.resize(
+                                      provider.imagePrompt.width,
+                                      provider.imagePrompt.height,
+                                    );
                                     setState(() {});
                                   },
                                 ),
@@ -407,7 +387,10 @@ class _State extends State<GenerateImage> {
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     provider.imagePrompt.height = int.tryParse(value) ?? -1;
-                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                    provider.painterController.resize(
+                                      provider.imagePrompt.width,
+                                      provider.imagePrompt.height,
+                                    );
                                   },
                                 ),
                                 Slider(
@@ -417,12 +400,35 @@ class _State extends State<GenerateImage> {
                                   divisions: 15,
                                   onChanged: (double value) {
                                     provider.imagePrompt.height = value.toInt();
-                                    painterController.resize(provider.imagePrompt.width, provider.imagePrompt.height);
+                                    provider.painterController.resize(
+                                      provider.imagePrompt.width,
+                                      provider.imagePrompt.height,
+                                    );
                                     heightController.text = value.toString();
                                     setState(() {});
                                   },
                                 ),
                               ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Flex(
+                        direction: Axis.horizontal,
+                        spacing: 10,
+                        children: [
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.frames.toString(),
+                              decoration: InputDecoration(
+                                label: Text("Frames", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                provider.imagePrompt.frames = int.tryParse(value) ?? 0;
+                              },
                             ),
                           ),
                         ],
@@ -498,7 +504,10 @@ class _State extends State<GenerateImage> {
                 height: provider.imagePrompt.height.toDouble(),
                 decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(5)),
                 margin: EdgeInsets.only(top: 10, bottom: 15),
-                child: CanvasPainter(controller: painterController),
+                child: CanvasPainter(
+                  controller: provider.painterController,
+                  size: Size(provider.imagePrompt.width.toDouble(), provider.imagePrompt.height.toDouble()),
+                ),
               ),
               Row(
                 crossAxisAlignment: .center,
@@ -508,14 +517,14 @@ class _State extends State<GenerateImage> {
                     width: 70,
                     height: 40,
                     child: TextFormField(
-                      initialValue: painterController.strokeWidth.toString(),
+                      initialValue: provider.painterController.strokeWidth.toString(),
                       decoration: InputDecoration(
                         label: Text("Stroke", style: inputText),
                         border: inputBorder,
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
-                        painterController.strokeWidth = double.parse(value);
+                        provider.painterController.strokeWidth = double.parse(value);
                       },
                     ),
                   ),
@@ -523,7 +532,7 @@ class _State extends State<GenerateImage> {
                     child: Text('Save image', style: theme.textTheme.bodyLarge),
                     onPressed: () async {
                       try {
-                        var background = painterController.backgroundLayer;
+                        var background = provider.painterController.backgroundLayer;
 
                         await FileSaver.instance.saveFile(
                           name: background?.name ?? "default",
