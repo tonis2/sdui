@@ -124,7 +124,9 @@ class _State extends State<CanvasPainter> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return SizedBox(
+      width: widget.size.width,
+      height: widget.size.height,
       child: GestureDetector(
         onPanUpdate: (details) {
           setState(() {

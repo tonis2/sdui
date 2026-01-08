@@ -10,6 +10,7 @@ import 'package:swipe_image_gallery/swipe_image_gallery.dart';
 import 'package:responsive_grid_list/responsive_grid_list.dart';
 import '/models/index.dart';
 import 'package:file_saver/file_saver.dart';
+import 'dart:math';
 
 class Gallery extends StatefulWidget {
   @override
@@ -17,7 +18,7 @@ class Gallery extends StatefulWidget {
 }
 
 class _State extends State<Gallery> {
-  int activePage = 0;
+  int activePage = 1;
 
   @override
   void initState() {
@@ -69,6 +70,13 @@ class _State extends State<Gallery> {
   Widget galleryView() {
     AppState provider = Inherited.of(context)!;
     ThemeData theme = Theme.of(context);
+
+    int startIndex = (activePage - 1) * provider.imagesOnPage;
+
+    var images = provider.images.values.toList().getRange(
+      startIndex,
+      min(startIndex + provider.imagesOnPage, provider.images.length),
+    );
 
     Widget imageView(BackgroundImage image) {
       return Stack(
@@ -142,10 +150,7 @@ class _State extends State<Gallery> {
 
         listViewBuilderOptions:
             ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: provider.images.values
-            .toList()
-            .map((image) => InkWell(onTap: () => openGallery(image), child: imageView(image)))
-            .toList(),
+        children: images.map((image) => InkWell(onTap: () => openGallery(image), child: imageView(image))).toList(),
       ),
     );
   }
@@ -162,11 +167,12 @@ class _State extends State<Gallery> {
           if (provider.images.isNotEmpty) galleryView(),
 
           if (provider.images.length > provider.imagesOnPage)
-            Padding(
+            Container(
+              width: 545,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
-                activePage: 1,
-                totalPages: (provider.images.length / provider.imagesOnPage).toInt(),
+                activePage: activePage,
+                totalPages: (provider.images.length / provider.imagesOnPage).ceil(),
                 onSelect: (page) {
                   setState(() {
                     activePage = page;

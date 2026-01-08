@@ -191,7 +191,7 @@ class _State extends State<GenerateImage> {
               if (provider.promptQueue.isNotEmpty) queueView(),
               Container(
                 width: size.width * 0.45,
-                height: 700,
+                height: 550,
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -357,7 +357,7 @@ class _State extends State<GenerateImage> {
                                 ),
                                 Slider(
                                   min: 64,
-                                  value: double.parse(widthController.text),
+                                  value: double.tryParse(widthController.text) ?? provider.imagePrompt.width.toDouble(),
                                   max: 1024,
                                   divisions: 15,
                                   onChanged: (double value) {
@@ -395,7 +395,8 @@ class _State extends State<GenerateImage> {
                                 ),
                                 Slider(
                                   min: 64,
-                                  value: double.parse(heightController.text),
+                                  value:
+                                      double.tryParse(heightController.text) ?? provider.imagePrompt.height.toDouble(),
                                   max: 1024,
                                   divisions: 15,
                                   onChanged: (double value) {
@@ -541,7 +542,6 @@ class _State extends State<GenerateImage> {
                         );
                       } catch (err) {
                         print(err.toString());
-
                         setState(() {
                           loading = false;
                         });
