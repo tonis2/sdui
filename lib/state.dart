@@ -4,6 +4,7 @@ import '/services/api.dart';
 import '/components/index.dart';
 export '/services/api.dart';
 import '/models/index.dart';
+import 'package:file_saver/file_saver.dart';
 
 class Inherited extends InheritedNotifier<AppState> {
   const Inherited({required super.child, super.key, required super.notifier});
@@ -79,11 +80,23 @@ class AppState extends ChangeNotifier {
   }
 
   void createPromptRequest(ImagePrompt prompt) async {
+    if (painterController.points.isNotEmpty) {
+      prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
+
+      // Save mask for debugging
+      // await FileSaver.instance.saveFile(
+      //   name: "default",
+      //   mimeType: MimeType.png,
+      //   bytes: provider.imagePrompt.extraImages.first,
+      // );
+    }
+
     var queue = QueueItem(
       prompt: ImagePrompt(
         prompt: prompt.prompt,
         negativePrompt: prompt.negativePrompt,
         maskInvert: prompt.maskInvert,
+        mask: prompt.mask,
         width: prompt.width,
         height: prompt.height,
         guidance: prompt.guidance,
@@ -95,18 +108,6 @@ class AppState extends ChangeNotifier {
       image: prompt.extraImages.firstOrNull,
       promptRequest: api.postImageToImage(prompt),
     );
-
-    if (painterController.points.isNotEmpty) {
-      prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
-
-      // Save mask for debugging
-      // await FileSaver.instance.saveFile(name: "default", mimeType: MimeType.png, bytes: provider.imagePrompt.mask);
-      // await FileSaver.instance.saveFile(
-      //   name: "default",
-      //   mimeType: MimeType.png,
-      //   bytes: provider.imagePrompt.extraImages.first,
-      // );
-    }
 
     promptQueue.add(queue);
     _processPrompt(queue);

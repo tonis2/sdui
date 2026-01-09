@@ -101,8 +101,6 @@ class _State extends State<GenerateImage> {
     if (_formKey.currentState!.validate()) {
       provider.createPromptRequest(provider.imagePrompt);
     }
-
-    provider.clearImages();
   }
 
   Widget queueView() {
@@ -421,7 +419,7 @@ class _State extends State<GenerateImage> {
                         spacing: 10,
                         children: [
                           Flexible(
-                            flex: 2,
+                            flex: 1,
                             child: TextFormField(
                               initialValue: provider.imagePrompt.frames.toString(),
                               decoration: InputDecoration(
@@ -435,16 +433,16 @@ class _State extends State<GenerateImage> {
                             ),
                           ),
                           Flexible(
-                            flex: 2,
+                            flex: 1,
                             child: TextFormField(
-                              initialValue: provider.imagePrompt.seed.toString(),
+                              initialValue: provider.imagePrompt.clipSkip.toString(),
                               decoration: InputDecoration(
-                                label: Text("Seed", style: inputText),
+                                label: Text("Clip skip", style: inputText),
                                 border: inputBorder,
                               ),
                               keyboardType: TextInputType.number,
                               onChanged: (value) {
-                                provider.imagePrompt.seed = int.tryParse(value) ?? 0;
+                                provider.imagePrompt.clipSkip = int.tryParse(value) ?? 0;
                               },
                             ),
                           ),
@@ -485,27 +483,16 @@ class _State extends State<GenerateImage> {
                               child: Text("Pick main image"),
                             ),
                           ),
-                          // Flexible(
-                          //   child: TextButton(
-                          //     onPressed: () async {
-                          //       FilePickerResult? result = await FilePicker.platform.pickFiles();
-                          //       if (result != null) {
-                          //         PlatformFile image = result.files.first;
-                          //         provider.imagePrompt.mask = image.bytes;
-                          //       }
-                          //     },
-                          //     child: Text("Pick mask"),
-                          //   ),
-                          // ),
-                          // Flexible(
-                          //   child: TextButton(
-                          //     onPressed: () async {
-                          //       clearImages();
-                          //       setState(() {});
-                          //     },
-                          //     child: Text("Reset canvas"),
-                          //   ),
-                          // ),
+
+                          Flexible(
+                            child: TextButton(
+                              onPressed: () async {
+                                provider.clearImages();
+                                setState(() {});
+                              },
+                              child: Text("Reset canvas"),
+                            ),
+                          ),
                         ],
                       ),
                       TextButton(

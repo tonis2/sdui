@@ -49,6 +49,7 @@ class CanvasController extends ChangeNotifier {
   void clear() {
     points.clear();
     recreateCanvas();
+    backgroundLayer = null;
     notifyListeners();
   }
 

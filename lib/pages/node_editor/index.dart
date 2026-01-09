@@ -22,7 +22,17 @@ class _State extends State<NodeEditor> {
   void initState() {
     // controller.addNodes([NodeView(controller: controller)]);
 
-    controller.addNodes([Node(id: "prompt", label: "Prompt")]);
+    var promptNode = Node(
+      id: "prompt",
+      label: "Prompt",
+      size: Size(200, 300),
+      inputs: [
+        Input(label: "Image", key: "image"),
+        Input(label: "Mask", key: "mask"),
+      ],
+      outputs: [Output(label: "Prompt", key: "prompt")],
+    );
+    controller.addNodes([promptNode]);
     super.initState();
   }
 
