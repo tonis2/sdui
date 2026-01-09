@@ -48,6 +48,7 @@ class _State extends State<GenerateImage> {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     AppState provider = Inherited.of(context)!;
     if (result != null) {
+      provider.clearImages();
       PlatformFile image = result.files.first;
       // clearImages();
       var decodedImage = await decodeImageFromList(image.bytes!);
@@ -100,6 +101,7 @@ class _State extends State<GenerateImage> {
     AppState provider = Inherited.of(context)!;
     if (_formKey.currentState!.validate()) {
       provider.createPromptRequest(provider.imagePrompt);
+      provider.clearImages();
     }
   }
 

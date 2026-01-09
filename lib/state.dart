@@ -92,25 +92,31 @@ class AppState extends ChangeNotifier {
     }
 
     var queue = QueueItem(
-      prompt: ImagePrompt(
-        prompt: prompt.prompt,
-        negativePrompt: prompt.negativePrompt,
-        maskInvert: prompt.maskInvert,
-        mask: prompt.mask,
-        width: prompt.width,
-        height: prompt.height,
-        guidance: prompt.guidance,
-        noiseStrenght: prompt.noiseStrenght,
-        sampler: prompt.sampler,
-        seed: prompt.seed,
-        steps: prompt.steps,
-      ),
+      prompt:
+          ImagePrompt(
+              prompt: prompt.prompt,
+              negativePrompt: prompt.negativePrompt,
+              maskInvert: prompt.maskInvert,
+              mask: prompt.mask,
+              width: prompt.width,
+              height: prompt.height,
+              guidance: prompt.guidance,
+              noiseStrenght: prompt.noiseStrenght,
+              sampler: prompt.sampler,
+              seed: prompt.seed,
+              steps: prompt.steps,
+            )
+            ..initImages = prompt.initImages
+            ..extraImages = prompt.extraImages,
       image: prompt.extraImages.firstOrNull,
       promptRequest: api.postImageToImage(prompt),
     );
 
     promptQueue.add(queue);
     _processPrompt(queue);
+
+    prompt.clearImages();
+
     notifyListeners();
   }
 }

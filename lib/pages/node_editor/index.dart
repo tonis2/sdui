@@ -23,7 +23,7 @@ class _State extends State<NodeEditor> {
     // controller.addNodes([NodeView(controller: controller)]);
 
     var promptNode = Node(
-      id: "prompt",
+      key: "prompt",
       label: "Prompt",
       size: Size(200, 300),
       inputs: [
@@ -32,7 +32,14 @@ class _State extends State<NodeEditor> {
       ],
       outputs: [Output(label: "Prompt", key: "prompt")],
     );
-    controller.addNodes([promptNode]);
+    var apiNode = Node(
+      key: "generate",
+      label: "Generate",
+      size: Size(200, 200),
+      inputs: [Input(label: "Prompt", key: "prompt")],
+      outputs: [],
+    );
+    controller.addNodes([promptNode, apiNode]);
     super.initState();
   }
 
