@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/services.dart';
-import '/components/index.dart';
-import '/models/index.dart';
 import '/state.dart';
 import '/config.dart';
 import 'package:go_router/go_router.dart';
@@ -13,19 +9,20 @@ class MenuItem {
   MenuItem({required this.link, required this.name});
 }
 
-var menuItems = [MenuItem(link: AppRoutes.home, name: "home"), MenuItem(link: AppRoutes.gallery, name: "gallery")];
+var menuItems = [
+  MenuItem(link: AppRoutes.home, name: "home"),
+  MenuItem(link: AppRoutes.gallery, name: "gallery"),
+  MenuItem(link: AppRoutes.nodes, name: "nodes"),
+];
 
 class Menu extends StatefulWidget {
+  const Menu({super.key});
+
   @override
   State<Menu> createState() => _State();
 }
 
 class _State extends State<Menu> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
   void open(MenuItem item) {
     context.go(item.link);
   }

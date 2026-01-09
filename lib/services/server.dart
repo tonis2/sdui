@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:http/io_client.dart';
 import 'dart:convert' as convert;
 import 'dart:async';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ServerUnreachableException implements Exception {
@@ -48,7 +46,7 @@ class Server {
   ByteData? sslCertificate;
   final Function(Exception error)? onError;
   http.Client client = http.Client();
-  Server({required this.headers, required this.baseUrl, this.sslCertificate, this.onError}) {}
+  Server({required this.headers, required this.baseUrl, this.sslCertificate, this.onError});
 
   Future<dynamic> post(String path, Map<String, dynamic> body) async {
     var request = await client.post(

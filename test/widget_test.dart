@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sdui/state.dart';
-import 'package:sdui/config.dart';
 import 'package:sdui/main.dart';
 
 void main() {

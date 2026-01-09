@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:localstorage/localstorage.dart';
+import 'package:sdui/pages/node_editor/index.dart';
 import 'menu.dart';
 import 'dart:ui';
 import '/state.dart';
@@ -47,7 +48,7 @@ Widget base(Widget child) {
     child: Column(
       spacing: 10,
       children: [
-        SizedBox(width: 200, height: 70, child: Menu()),
+        SizedBox(width: 400, height: 70, child: Menu()),
         Expanded(child: child),
       ],
     ),
@@ -69,6 +70,17 @@ Widget router(AppState appState, String startPage) {
             return CustomTransitionPage<void>(
               key: state.pageKey,
               child: base(GenerateImage()),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.nodes,
+          pageBuilder: (context, state) {
+            return CustomTransitionPage<void>(
+              key: state.pageKey,
+              child: base(NodeEditor()),
               transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                   FadeTransition(opacity: animation, child: child),
             );

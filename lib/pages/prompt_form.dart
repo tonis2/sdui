@@ -8,6 +8,8 @@ import 'package:file_saver/file_saver.dart';
 import 'dart:math';
 
 class GenerateImage extends StatefulWidget {
+  const GenerateImage({super.key});
+
   @override
   State<GenerateImage> createState() => _State();
 }
@@ -189,9 +191,9 @@ class _State extends State<GenerateImage> {
             spacing: 10,
             children: [
               if (provider.promptQueue.isNotEmpty) queueView(),
-              Container(
+              SizedBox(
                 width: size.width * 0.45,
-                height: 550,
+                height: 580,
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -429,6 +431,20 @@ class _State extends State<GenerateImage> {
                               keyboardType: TextInputType.number,
                               onChanged: (value) {
                                 provider.imagePrompt.frames = int.tryParse(value) ?? 0;
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: TextFormField(
+                              initialValue: provider.imagePrompt.seed.toString(),
+                              decoration: InputDecoration(
+                                label: Text("Seed", style: inputText),
+                                border: inputBorder,
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                provider.imagePrompt.seed = int.tryParse(value) ?? 0;
                               },
                             ),
                           ),

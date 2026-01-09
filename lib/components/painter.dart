@@ -106,7 +106,7 @@ class CanvasPainter extends StatefulWidget {
 }
 
 class _State extends State<CanvasPainter> {
-  updateCanvas() {
+  void updateCanvas() {
     setState(() {});
   }
 

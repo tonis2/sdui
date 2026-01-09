@@ -32,7 +32,7 @@ class ImagePrompt {
     this.seed = -1,
     this.clipSkip = 0,
     this.guidance = 1,
-    this.noiseStrenght = 0.6,
+    this.noiseStrenght = 0.15,
     this.sampler = "Euler",
     this.maskInvert = false,
   });

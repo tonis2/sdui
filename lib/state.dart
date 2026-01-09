@@ -25,7 +25,7 @@ class AppState extends ChangeNotifier {
   AppState({required this.api, required this.images});
 
   CanvasController painterController = CanvasController(paintColor: Colors.white);
-  ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "");
+  ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "", seed: 10);
   KoboldApi api;
   Box<BackgroundImage> images;
   List<QueueItem> promptQueue = [];

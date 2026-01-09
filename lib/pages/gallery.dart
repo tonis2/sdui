@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sdui/config.dart';
 import '/components/index.dart';
@@ -8,11 +6,12 @@ import '/models/index.dart';
 import '/state.dart';
 import 'package:swipe_image_gallery/swipe_image_gallery.dart';
 import 'package:responsive_grid_list/responsive_grid_list.dart';
-import '/models/index.dart';
 import 'package:file_saver/file_saver.dart';
 import 'dart:math';
 
 class Gallery extends StatefulWidget {
+  const Gallery({super.key});
+
   @override
   State<Gallery> createState() => _State();
 }
@@ -25,27 +24,30 @@ class _State extends State<Gallery> {
     super.initState();
   }
 
-  void openGallery(BackgroundImage image) {
+  void openGallery(BackgroundImage image, int index) {
     AppState provider = Inherited.of(context)!;
-    int imageIndex = 0;
+
     ThemeData theme = Theme.of(context);
     Size size = MediaQuery.sizeOf(context);
 
-    for (var value in provider.images.keys.indexed) {
-      if (image.key == value.$2) imageIndex = value.$1;
-    }
+    int startIndex = (activePage - 1) * provider.imagesOnPage;
+
+    var images = provider.images.values.toList().getRange(
+      startIndex,
+      min(startIndex + provider.imagesOnPage, provider.images.length),
+    );
 
     SwipeImageGallery(
       context: context,
       transitionDuration: 200,
-      initialIndex: imageIndex,
-      children: provider.images.values
+      initialIndex: index,
+      children: images
           .map(
             (img) => InkWell(
               onTap: () {
                 context.pop();
               },
-              child: Container(
+              child: SizedBox(
                 height: size.height,
                 child: Stack(
                   children: [
@@ -69,7 +71,6 @@ class _State extends State<Gallery> {
 
   Widget galleryView() {
     AppState provider = Inherited.of(context)!;
-    ThemeData theme = Theme.of(context);
 
     int startIndex = (activePage - 1) * provider.imagesOnPage;
 
@@ -147,10 +148,11 @@ class _State extends State<Gallery> {
         minItemWidth: 150, // The minimum item width (can be smaller, if the layout constraints are smaller)
         minItemsPerRow: 2, // The minimum items to show in a single row. Takes precedence over minItemWidth
         maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
-
         listViewBuilderOptions:
             ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: images.map((image) => InkWell(onTap: () => openGallery(image), child: imageView(image))).toList(),
+        children: images.indexed
+            .map((image) => InkWell(onTap: () => openGallery(image.$2, image.$1), child: imageView(image.$2)))
+            .toList(),
       ),
     );
   }
