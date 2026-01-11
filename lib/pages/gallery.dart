@@ -8,6 +8,7 @@ import 'package:swipe_image_gallery/swipe_image_gallery.dart';
 import 'package:responsive_grid_list/responsive_grid_list.dart';
 import 'package:file_saver/file_saver.dart';
 import 'dart:math';
+// import 'package:image/image.dart' as imageLib;
 
 class Gallery extends StatefulWidget {
   const Gallery({super.key});
@@ -117,7 +118,7 @@ class _State extends State<Gallery> {
                   ),
                   InkWell(
                     child: Tooltip(
-                      message: "Use for prompt",
+                      message: "Use for inpaint",
                       child: Icon(Icons.edit, color: Colors.white),
                     ),
                     onTap: () async {
@@ -126,8 +127,51 @@ class _State extends State<Gallery> {
                         BackgroundImage(width: image.width, height: image.height, data: image.data, name: image.name),
                       );
                       provider.imagePrompt.addExtraImage(image.data);
+                      provider.imagePrompt.addInitImage(image.data);
                       provider.imagePrompt.width = image.width;
                       provider.imagePrompt.height = image.height;
+                      provider.imagePrompt.noiseStrenght = 0.95;
+                      context.go(AppRoutes.home);
+                    },
+                  ),
+                  InkWell(
+                    child: Tooltip(
+                      message: "Use for prompt",
+                      child: Icon(Icons.image, color: Colors.white),
+                    ),
+                    onTap: () async {
+                      provider.clearImages();
+
+                      // imageLib.Command()
+                      //   ..decodePng(image.data)
+                      //   ..copyResize(width: image.width + 5)
+                      //   ..execute().then((res) async {
+                      //     if (res.outputImage == null) return;
+
+                      //     var bytes = res.outputImage!.getBytes();
+                      //     provider.painterController.setBackground(
+                      //       BackgroundImage(
+                      //         width: res.outputImage!.width,
+                      //         height: res.outputImage!.height,
+                      //         data: bytes,
+                      //         name: image.name,
+                      //       ),
+                      //     );
+
+                      //     provider.imagePrompt.addExtraImage(bytes);
+                      //     provider.imagePrompt.width = res.outputImage!.width;
+                      //     provider.imagePrompt.height = res.outputImage!.height;
+                      //     provider.imagePrompt.noiseStrenght = 0.4;
+                      //     context.go(AppRoutes.home);
+                      //   });
+                      provider.painterController.setBackground(
+                        BackgroundImage(width: image.width, height: image.height, data: image.data, name: image.name),
+                      );
+
+                      provider.imagePrompt.addExtraImage(image.data);
+                      provider.imagePrompt.width = image.width;
+                      provider.imagePrompt.height = image.height;
+                      provider.imagePrompt.noiseStrenght = 0.4;
                       context.go(AppRoutes.home);
                     },
                   ),

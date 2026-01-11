@@ -14,6 +14,13 @@ class GenerateImage extends StatefulWidget {
   State<GenerateImage> createState() => _State();
 }
 
+class ISize {
+  final int width;
+  final int height;
+
+  ISize({required this.width, required this.height});
+}
+
 class _State extends State<GenerateImage> {
   bool loading = false;
 
@@ -44,44 +51,50 @@ class _State extends State<GenerateImage> {
     super.initState();
   }
 
+  ISize calculateResize(ISize size) {
+    int width = min(size.width.toInt(), 1024);
+    int height = min(size.height.toInt(), 1024);
+
+    if (size.width >= size.height) {
+      double aspect = size.height / size.width;
+      height = min((width * aspect).toInt(), 1024);
+    }
+    if (size.width <= size.height) {
+      double aspect = size.width / size.height;
+      width = min((height * aspect).toInt(), 1024);
+    }
+
+    return ISize(width: width, height: height);
+  }
+
+  void resizeImage(ISize size) {
+    AppState provider = Inherited.of(context)!;
+    size = calculateResize(size);
+    provider.imagePrompt.width = size.width;
+    provider.imagePrompt.height = size.height;
+    widthController.text = size.width.toString();
+    heightController.text = size.height.toString();
+    setState(() {});
+  }
+
   Future<FilePickerResult?> pickImage({bool isExtra = true}) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     AppState provider = Inherited.of(context)!;
     if (result != null) {
-      provider.clearImages();
       PlatformFile image = result.files.first;
-      // clearImages();
       var decodedImage = await decodeImageFromList(image.bytes!);
 
-      if (decodedImage.width >= decodedImage.height) {
-        double aspect = decodedImage.height / decodedImage.width;
-        int width = min(decodedImage.width, 1024);
-        int height = min(decodedImage.height, 1024);
-        height = (width * aspect).toInt();
-        heightController.text = height.toString();
-        widthController.text = width.toString();
-      }
+      ISize newSize = calculateResize(ISize(width: decodedImage.width, height: decodedImage.height));
 
-      if (decodedImage.width <= decodedImage.height) {
-        double aspect = decodedImage.width / decodedImage.height;
-        int width = min(decodedImage.width, 1024);
-        int height = min(decodedImage.height, 1024);
-        width = (height * aspect).toInt();
-        heightController.text = height.toString();
-        widthController.text = width.toString();
-      }
-
-      provider.imagePrompt.width = int.parse(widthController.text);
-      provider.imagePrompt.height = int.parse(heightController.text);
+      provider.imagePrompt.width = newSize.width;
+      provider.imagePrompt.height = newSize.height;
 
       provider.painterController.setBackground(
-        BackgroundImage(
-          width: int.parse(widthController.text),
-          height: int.parse(heightController.text),
-          data: image.bytes!,
-          name: image.name,
-        ),
+        BackgroundImage(width: newSize.width, height: newSize.height, data: image.bytes!, name: image.name),
       );
+
+      widthController.text = newSize.width.toString();
+      heightController.text = newSize.height.toString();
 
       if (isExtra) {
         provider.imagePrompt.addExtraImage(image.bytes!);
@@ -101,7 +114,6 @@ class _State extends State<GenerateImage> {
     AppState provider = Inherited.of(context)!;
     if (_formKey.currentState!.validate()) {
       provider.createPromptRequest(provider.imagePrompt);
-      provider.clearImages();
     }
   }
 
@@ -350,11 +362,8 @@ class _State extends State<GenerateImage> {
                                   ),
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
-                                    provider.imagePrompt.width = int.tryParse(value) ?? -1;
-                                    provider.painterController.resize(
-                                      provider.imagePrompt.width,
-                                      provider.imagePrompt.height,
-                                    );
+                                    int width = int.tryParse(value) ?? -1;
+                                    resizeImage(ISize(width: width, height: provider.imagePrompt.height));
                                   },
                                 ),
                                 Slider(
@@ -362,14 +371,8 @@ class _State extends State<GenerateImage> {
                                   value: double.tryParse(widthController.text) ?? provider.imagePrompt.width.toDouble(),
                                   max: 1024,
                                   divisions: 15,
-                                  onChanged: (double value) {
-                                    provider.imagePrompt.width = value.toInt();
-                                    widthController.text = value.toString();
-                                    provider.painterController.resize(
-                                      provider.imagePrompt.width,
-                                      provider.imagePrompt.height,
-                                    );
-                                    setState(() {});
+                                  onChanged: (width) {
+                                    resizeImage(ISize(width: width.toInt(), height: provider.imagePrompt.height));
                                   },
                                 ),
                               ],
@@ -388,11 +391,8 @@ class _State extends State<GenerateImage> {
                                   ),
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
-                                    provider.imagePrompt.height = int.tryParse(value) ?? -1;
-                                    provider.painterController.resize(
-                                      provider.imagePrompt.width,
-                                      provider.imagePrompt.height,
-                                    );
+                                    int height = int.tryParse(value) ?? -1;
+                                    resizeImage(ISize(width: provider.imagePrompt.width, height: height));
                                   },
                                 ),
                                 Slider(
@@ -401,14 +401,8 @@ class _State extends State<GenerateImage> {
                                       double.tryParse(heightController.text) ?? provider.imagePrompt.height.toDouble(),
                                   max: 1024,
                                   divisions: 15,
-                                  onChanged: (double value) {
-                                    provider.imagePrompt.height = value.toInt();
-                                    provider.painterController.resize(
-                                      provider.imagePrompt.width,
-                                      provider.imagePrompt.height,
-                                    );
-                                    heightController.text = value.toString();
-                                    setState(() {});
+                                  onChanged: (double height) {
+                                    resizeImage(ISize(width: provider.imagePrompt.width, height: height.toInt()));
                                   },
                                 ),
                               ],

@@ -115,7 +115,7 @@ class AppState extends ChangeNotifier {
     promptQueue.add(queue);
     _processPrompt(queue);
 
-    prompt.clearImages();
+    clearImages();
 
     notifyListeners();
   }
