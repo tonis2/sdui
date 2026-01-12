@@ -46,6 +46,6 @@ class _State extends State<NodeEditor> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.sizeOf(context);
-    return NodeCanvas(size: size, controller: controller);
+    return NodeCanvas(size: size, controller: controller, offset: Size(0, 70));
   }
 }

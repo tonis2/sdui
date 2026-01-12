@@ -18,17 +18,21 @@ class Inherited extends InheritedNotifier<AppState> {
 
 Future<AppState> createState({required KoboldApi api}) async {
   Hive.registerAdapter(ImageAdapter());
-  var images = await Hive.openBox<BackgroundImage>('images');
-  return AppState(api: api, images: images);
+
+  return AppState(api: api);
 }
 
 class AppState extends ChangeNotifier {
-  AppState({required this.api, required this.images});
+  AppState({required this.api}) {
+    Hive.openBox<BackgroundImage>('images').then((response) {
+      images = response;
+    });
+  }
 
   CanvasController painterController = CanvasController(paintColor: Colors.white);
   ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "", seed: 10);
   KoboldApi api;
-  Box<BackgroundImage> images;
+  late Box<BackgroundImage> images;
   List<QueueItem> promptQueue = [];
   int imagesOnPage = 15;
 

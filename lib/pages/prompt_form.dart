@@ -52,8 +52,8 @@ class _State extends State<GenerateImage> {
   }
 
   ISize calculateResize(ISize size) {
-    int width = min(size.width.toInt(), 1024);
-    int height = min(size.height.toInt(), 1024);
+    int width = max(min(size.width.toInt(), 1024), 24);
+    int height = max(min(size.height.toInt(), 1024), 24);
 
     if (size.width >= size.height) {
       double aspect = size.height / size.width;

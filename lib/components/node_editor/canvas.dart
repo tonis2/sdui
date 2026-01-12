@@ -8,9 +8,9 @@ import 'dart:collection';
 import 'dart:ui';
 
 class _LinePainter extends CustomPainter {
-  final List<Connection> connections;
-  final Connection? activeConnection;
-  _LinePainter(this.connections, this.activeConnection);
+  final NodeEditorController controller;
+
+  _LinePainter({required this.controller});
 
   Paint paintColor = Paint()
     ..color = Colors.black
@@ -18,12 +18,12 @@ class _LinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (activeConnection != null) {
-      canvas.drawLine(activeConnection!.start, activeConnection!.end, paintColor);
+    if (controller.activeConnection != null) {
+      canvas.drawLine(controller.activeConnection!.start, controller.activeConnection!.end, paintColor);
     }
 
-    for (var i = 0; i < connections.length; i += 1) {
-      Connection conn = connections[i];
+    for (var i = 0; i < controller.connections.length; i += 1) {
+      Connection conn = controller.connections[i];
       canvas.drawLine(conn.start, conn.end, paintColor);
     }
   }
@@ -35,23 +35,28 @@ class _LinePainter extends CustomPainter {
 class Input {
   final String label;
   final String key;
+  final Color color;
+  final String uuid = const Uuid().v4();
 
-  const Input({required this.label, required this.key});
+  Input({required this.label, required this.key, this.color = Colors.lightGreen});
 }
 
 class Output {
   final String label;
   final String key;
+  final Color color;
+  final String uuid = Uuid().v4();
 
-  const Output({required this.label, required this.key});
+  Output({required this.label, required this.key, this.color = Colors.blue});
 }
 
 class Node {
   final String key;
-  final String uuid = Uuid().v4();
+  final String uuid = const Uuid().v4();
   final String label;
   final List<Input> inputs;
   final List<Output> outputs;
+  final Color color;
   Size size = Size(100, 100);
   Offset offset = Offset(0, 0);
 
@@ -60,6 +65,7 @@ class Node {
     required this.label,
     required this.inputs,
     required this.outputs,
+    this.color = const Color.fromRGBO(128, 186, 215, 0.5),
     this.size = const Size(100, 100),
   });
 }
@@ -77,7 +83,33 @@ class NodeEditorController extends ChangeNotifier {
   final Map<String, Node> nodes = HashMap();
   List<Connection> connections = [];
 
+  Connection? activeConnection;
+
   NodeEditorController();
+
+  set activeConn(Connection connection) {
+    activeConnection = connection;
+    notifyListeners();
+  }
+
+  void addConnection(Connection connection) {
+    connections.add(connection);
+    activeConnection = null;
+    notifyListeners();
+  }
+
+  void removeConnection(Connection connection) {
+    connections.remove(connection);
+    activeConnection = null;
+    notifyListeners();
+  }
+
+  void removeActive() {
+    if (activeConnection != null) {
+      activeConnection = null;
+      notifyListeners();
+    }
+  }
 
   void addNodes(List<Node> items) {
     for (var node in items) {
@@ -92,8 +124,9 @@ class NodeCanvas extends StatefulWidget {
   NodeEditorController controller;
 
   Size size;
+  Size offset;
 
-  NodeCanvas({required this.controller, required this.size, super.key});
+  NodeCanvas({required this.controller, required this.size, super.key, this.offset = Size.zero});
 
   @override
   State<NodeCanvas> createState() => _State();
@@ -102,10 +135,39 @@ class NodeCanvas extends StatefulWidget {
 class _State extends State<NodeCanvas> {
   final TransformationController _transformationController = TransformationController();
 
-  Connection? activeConnection;
-
   void updateCanvas() {
     setState(() {});
+  }
+
+  Widget nodeBase(Node node) {
+    ThemeData theme = Theme.of(context);
+
+    return Container(
+      width: node.size.width,
+      height: node.size.height + 40,
+      decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        children: [
+          Container(
+            height: 40,
+            width: node.size.width,
+            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+            decoration: BoxDecoration(
+              color: node.color,
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+            ),
+            child: Text(node.label, style: theme.textTheme.bodyLarge),
+          ),
+          Row(
+            children: [
+              SizedBox(width: 20, height: node.size.height, child: inputRow(node)),
+              Expanded(child: Column(children: [])),
+              SizedBox(width: 20, height: node.size.height, child: outputRow(node)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -122,7 +184,7 @@ class _State extends State<NodeCanvas> {
   }
 
   Offset calcOffset(Offset offset, Size size) {
-    return offset - Offset(size.width / 2, 70 + size.height / 2);
+    return offset - Offset(size.width / 2, size.height / 2 + widget.offset.height);
   }
 
   Widget inputRow(Node node) {
@@ -135,26 +197,40 @@ class _State extends State<NodeCanvas> {
           message: input.label,
           child: InkWell(
             onTapDown: (details) {
-              if (activeConnection != null) {
+              if (widget.controller.activeConnection != null) {
                 // Make connection between nodes
 
                 var previousConnection = widget.controller.connections.where((conn) {
-                  return conn.startNode.uuid == activeConnection!.startNode.uuid &&
-                      conn.endNode?.uuid == activeConnection!.endNode!.uuid;
+                  return conn.startNode.uuid == widget.controller.activeConnection!.startNode.uuid &&
+                      conn.endNode?.uuid == widget.controller.activeConnection!.endNode!.uuid;
                 });
 
                 if (previousConnection.isNotEmpty) return;
 
-                setState(() {
-                  widget.controller.connections.add(activeConnection!..endNode = node);
-                  activeConnection = null;
-                });
+                widget.controller.addConnection(widget.controller.activeConnection!..endNode = node);
+              } else {
+                var previousConnection = widget.controller.connections.where((conn) => conn.endNode?.uuid == node.uuid);
+
+                // Handle already made connection, when click you can remove already made connection
+                if (previousConnection.isNotEmpty) {
+                  var connection = previousConnection.first;
+
+                  widget.controller.removeConnection(connection);
+
+                  widget.controller.activeConn = Connection(
+                    start:
+                        connection.startNode.offset +
+                        Offset(connection.startNode.size.width, (connection.startNode.size.height / 2) + 40),
+                    end: details.globalPosition,
+                    startNode: connection.startNode,
+                  );
+                }
               }
             },
             child: Container(
               width: 15,
               height: 15,
-              decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: input.color, borderRadius: BorderRadius.circular(10)),
             ),
           ),
         );
@@ -172,18 +248,16 @@ class _State extends State<NodeCanvas> {
           message: input.label,
           child: InkWell(
             onTapDown: (details) {
-              setState(() {
-                activeConnection = Connection(
-                  start: details.globalPosition + Offset(-10, -80),
-                  end: details.globalPosition,
-                  startNode: node,
-                );
-              });
+              widget.controller.activeConn = Connection(
+                start: details.globalPosition + Offset(-10, -10 - widget.offset.height),
+                end: details.globalPosition,
+                startNode: node,
+              );
             },
             child: Container(
               width: 15,
               height: 15,
-              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: input.color, borderRadius: BorderRadius.circular(10)),
             ),
           ),
         );
@@ -200,9 +274,9 @@ class _State extends State<NodeCanvas> {
       height: size.height,
       child: Listener(
         onPointerHover: (event) {
-          if (activeConnection != null) {
+          if (widget.controller.activeConnection != null) {
             setState(() {
-              activeConnection?.end = event.localPosition;
+              widget.controller.activeConnection?.end = event.localPosition;
             });
           }
         },
@@ -210,14 +284,10 @@ class _State extends State<NodeCanvas> {
           children: [
             Listener(
               onPointerDown: (details) {
-                if (activeConnection != null) {
-                  setState(() {
-                    activeConnection = null;
-                  });
-                }
+                widget.controller.removeActive();
               },
               child: CustomPaint(
-                painter: _LinePainter(widget.controller.connections, activeConnection),
+                painter: _LinePainter(controller: widget.controller),
                 size: widget.size,
               ),
             ),
@@ -229,7 +299,8 @@ class _State extends State<NodeCanvas> {
                 child: Draggable(
                   maxSimultaneousDrags: 1,
                   onDragUpdate: (DragUpdateDetails details) {
-                    activeConnection = null;
+                    widget.controller.removeActive();
+
                     item.value.offset = calcOffset(details.localPosition, node.size);
 
                     var previousConnections = widget.controller.connections.where((conn) {
@@ -239,9 +310,9 @@ class _State extends State<NodeCanvas> {
                     if (previousConnections.isNotEmpty) {
                       for (var conn in previousConnections) {
                         if (conn.startNode.uuid == node.uuid) {
-                          conn.start = details.localPosition + Offset(node.size.width / 2, -70);
+                          conn.start = details.localPosition + Offset(node.size.width / 2, -70 + 40);
                         } else if (conn.endNode?.uuid == node.uuid) {
-                          conn.end = details.localPosition - Offset(node.size.width / 2, 70);
+                          conn.end = details.localPosition - Offset(node.size.width / 2, 70 - 40);
                         }
                       }
                     }
@@ -249,18 +320,7 @@ class _State extends State<NodeCanvas> {
                     setState(() {});
                   },
                   feedback: Container(decoration: BoxDecoration(color: Colors.red)),
-                  child: Container(
-                    width: node.size.width,
-                    height: node.size.height,
-                    decoration: BoxDecoration(color: Colors.green),
-                    child: Row(
-                      children: [
-                        SizedBox(width: 20, height: size.height, child: inputRow(node)),
-                        Expanded(child: Column(children: [])),
-                        SizedBox(width: 20, height: size.height, child: outputRow(node)),
-                      ],
-                    ),
-                  ),
+                  child: nodeBase(node),
                 ),
               );
             }),
