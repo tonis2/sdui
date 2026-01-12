@@ -23,29 +23,41 @@ class _State extends State<NodeEditor> {
     // controller.addNodes([NodeView(controller: controller)]);
 
     var promptNode = Node(
-      key: "prompt",
+      id: "prompt",
       label: "Prompt",
-      size: Size(200, 300),
+      size: Size(300, 400),
       inputs: [
-        Input(label: "Image", key: "image"),
-        Input(label: "Mask", key: "mask"),
+        Input(label: "Image"),
+        Input(label: "Mask"),
       ],
-      outputs: [Output(label: "Prompt", key: "prompt")],
+      outputs: [Output(label: "Prompt")],
     );
+
+    var image = Node(
+      id: "image",
+      label: "Image",
+      size: Size(300, 300),
+      inputs: [],
+      outputs: [
+        Output(label: "Image"),
+        Output(label: "Mask"),
+      ],
+    );
+
     var apiNode = Node(
-      key: "generate",
+      id: "generate",
       label: "Generate",
       size: Size(200, 200),
-      inputs: [Input(label: "Prompt", key: "prompt")],
+      inputs: [Input(label: "Prompt")],
       outputs: [],
     );
-    controller.addNodes([promptNode, apiNode]);
+    controller.addNodes([image, promptNode, apiNode]);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.sizeOf(context);
-    return NodeCanvas(size: size, controller: controller, offset: Size(0, 70));
+    return NodeCanvas(size: size, controller: controller);
   }
 }

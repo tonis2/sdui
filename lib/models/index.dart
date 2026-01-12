@@ -24,7 +24,7 @@ class ImagePrompt {
   ImagePrompt({
     required this.prompt,
     required this.negativePrompt,
-    this.steps = 4,
+    this.steps = 8,
     this.width = 512,
     this.height = 512,
     this.frames = 0,

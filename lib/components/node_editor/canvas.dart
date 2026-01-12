@@ -34,49 +34,68 @@ class _LinePainter extends CustomPainter {
 
 class Input {
   final String label;
-  final String key;
+  String? key;
   final Color color;
   final String uuid = const Uuid().v4();
 
-  Input({required this.label, required this.key, this.color = Colors.lightGreen});
+  Input({required this.label, this.key, this.color = Colors.lightGreen}) {
+    key ??= label;
+  }
 }
 
 class Output {
   final String label;
-  final String key;
+  String? key;
   final Color color;
   final String uuid = Uuid().v4();
 
-  Output({required this.label, required this.key, this.color = Colors.blue});
+  Output({required this.label, this.key, this.color = Colors.blue}) {
+    key ??= label;
+  }
 }
 
 class Node {
-  final String key;
-  final String uuid = const Uuid().v4();
+  final String id;
   final String label;
   final List<Input> inputs;
   final List<Output> outputs;
   final Color color;
+  late final String uuid;
   Size size = Size(100, 100);
   Offset offset = Offset(0, 0);
 
+  Offset calcOffset(Offset offset) {
+    return offset - Offset(size.width / 2, size.height / 2);
+  }
+
   Node({
-    required this.key,
+    required this.id,
     required this.label,
     required this.inputs,
     required this.outputs,
     this.color = const Color.fromRGBO(128, 186, 215, 0.5),
     this.size = const Size(100, 100),
-  });
+  }) {
+    uuid = Uuid().v4();
+  }
 }
 
 class Connection {
   Offset start;
   Offset end;
   Node startNode;
+  int startIndex;
   Node? endNode;
+  int? endIndex;
 
-  Connection({required this.start, required this.end, required this.startNode, this.endNode});
+  Connection({
+    required this.start,
+    required this.end,
+    required this.startNode,
+    required this.startIndex,
+    this.endIndex,
+    this.endNode,
+  });
 }
 
 class NodeEditorController extends ChangeNotifier {
@@ -87,7 +106,7 @@ class NodeEditorController extends ChangeNotifier {
 
   NodeEditorController();
 
-  set activeConn(Connection connection) {
+  void setActiveConnection(Connection connection) {
     activeConnection = connection;
     notifyListeners();
   }
@@ -111,9 +130,51 @@ class NodeEditorController extends ChangeNotifier {
     }
   }
 
+  void setNodePosition(Offset offset, String uuid) {
+    Node? node = nodes[uuid];
+
+    if (node != null) {
+      activeConnection = null;
+      offset = node.calcOffset(offset);
+      nodes[uuid]?.offset = offset;
+      var previousConnections = connections.where(
+        (conn) => conn.startNode.uuid == node.uuid || conn.endNode?.uuid == node.uuid,
+      );
+
+      if (previousConnections.isNotEmpty) {
+        for (var conn in previousConnections) {
+          if (conn.startNode.uuid == node.uuid) {
+            double indexOffset = (conn.endNode!.outputs.length * 9);
+            conn.start = offset + Offset(node.size.width, node.size.height / 2 + 40 - indexOffset);
+          } else if (conn.endNode?.uuid == node.uuid && conn.endNode != null) {
+            double indexOffset = (conn.endNode!.inputs.length * 9);
+            conn.end = offset + Offset(0, node.size.height / 2 + 40 - indexOffset);
+          }
+        }
+      }
+      notifyListeners();
+    }
+  }
+
+  void connectNodes(Node startNode, Node endNode, int startIndex, int endInded) {}
+
+  // Return connected nodes for the node at index
+  List<Node> connectedNodes(Node node, int index) {
+    List<Node> nodes = [];
+    for (var conn in connections) {
+      if (conn.startNode.uuid == node.uuid && conn.startIndex == index && conn.endNode != null) {
+        nodes.add(conn.endNode!);
+      } else if (conn.endNode?.uuid == node.uuid && conn.endIndex == index) {
+        nodes.add(conn.startNode);
+      }
+    }
+
+    return nodes;
+  }
+
   void addNodes(List<Node> items) {
     for (var node in items) {
-      nodes[node.key] = node;
+      nodes[node.uuid] = node;
     }
 
     notifyListeners();
@@ -124,9 +185,8 @@ class NodeCanvas extends StatefulWidget {
   NodeEditorController controller;
 
   Size size;
-  Size offset;
 
-  NodeCanvas({required this.controller, required this.size, super.key, this.offset = Size.zero});
+  NodeCanvas({required this.controller, required this.size, super.key});
 
   @override
   State<NodeCanvas> createState() => _State();
@@ -183,16 +243,14 @@ class _State extends State<NodeCanvas> {
     super.dispose();
   }
 
-  Offset calcOffset(Offset offset, Size size) {
-    return offset - Offset(size.width / 2, size.height / 2 + widget.offset.height);
-  }
-
   Widget inputRow(Node node) {
     return Column(
-      spacing: 10,
+      spacing: 15,
       mainAxisAlignment: .center,
       crossAxisAlignment: .center,
       children: node.inputs.map((input) {
+        int index = node.inputs.indexOf(input);
+
         return Tooltip(
           message: input.label,
           child: InkWell(
@@ -200,12 +258,13 @@ class _State extends State<NodeCanvas> {
               if (widget.controller.activeConnection != null) {
                 // Make connection between nodes
 
-                var previousConnection = widget.controller.connections.where((conn) {
-                  return conn.startNode.uuid == widget.controller.activeConnection!.startNode.uuid &&
-                      conn.endNode?.uuid == widget.controller.activeConnection!.endNode!.uuid;
-                });
+                //TODO: broken
+                // var previousConnection = widget.controller.connections.where((conn) {
+                //   return conn.startNode.uuid == widget.controller.activeConnection!.startNode.uuid ||
+                //       conn.endNode?.uuid == widget.controller.activeConnection!.endNode!.uuid;
+                // });
 
-                if (previousConnection.isNotEmpty) return;
+                // if (previousConnection.isNotEmpty) return;
 
                 widget.controller.addConnection(widget.controller.activeConnection!..endNode = node);
               } else {
@@ -217,19 +276,23 @@ class _State extends State<NodeCanvas> {
 
                   widget.controller.removeConnection(connection);
 
-                  widget.controller.activeConn = Connection(
-                    start:
-                        connection.startNode.offset +
-                        Offset(connection.startNode.size.width, (connection.startNode.size.height / 2) + 40),
-                    end: details.globalPosition,
-                    startNode: connection.startNode,
+                  widget.controller.setActiveConnection(
+                    Connection(
+                      start:
+                          connection.startNode.offset +
+                          Offset(connection.startNode.size.width, (connection.startNode.size.height / 2) + 40),
+                      end: details.globalPosition,
+                      startNode: connection.startNode,
+                      startIndex: connection.startIndex,
+                      endIndex: index,
+                    ),
                   );
                 }
               }
             },
             child: Container(
-              width: 15,
-              height: 15,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(color: input.color, borderRadius: BorderRadius.circular(10)),
             ),
           ),
@@ -240,23 +303,25 @@ class _State extends State<NodeCanvas> {
 
   Widget outputRow(Node node) {
     return Column(
-      spacing: 10,
+      spacing: 15,
       mainAxisAlignment: .center,
       crossAxisAlignment: .center,
       children: node.outputs.map((input) {
+        int index = node.outputs.indexOf(input);
+
+        Offset offset = node.offset + Offset(node.size.width, node.size.height / 2 + 40 + index * 10);
+
         return Tooltip(
           message: input.label,
           child: InkWell(
             onTapDown: (details) {
-              widget.controller.activeConn = Connection(
-                start: details.globalPosition + Offset(-10, -10 - widget.offset.height),
-                end: details.globalPosition,
-                startNode: node,
+              widget.controller.setActiveConnection(
+                Connection(start: offset, end: offset, startNode: node, startIndex: index),
               );
             },
             child: Container(
-              width: 15,
-              height: 15,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(color: input.color, borderRadius: BorderRadius.circular(10)),
             ),
           ),
@@ -298,27 +363,8 @@ class _State extends State<NodeCanvas> {
                 left: node.offset.dx,
                 child: Draggable(
                   maxSimultaneousDrags: 1,
-                  onDragUpdate: (DragUpdateDetails details) {
-                    widget.controller.removeActive();
-
-                    item.value.offset = calcOffset(details.localPosition, node.size);
-
-                    var previousConnections = widget.controller.connections.where((conn) {
-                      return conn.startNode.uuid == node.uuid || conn.endNode?.uuid == node.uuid;
-                    });
-
-                    if (previousConnections.isNotEmpty) {
-                      for (var conn in previousConnections) {
-                        if (conn.startNode.uuid == node.uuid) {
-                          conn.start = details.localPosition + Offset(node.size.width / 2, -70 + 40);
-                        } else if (conn.endNode?.uuid == node.uuid) {
-                          conn.end = details.localPosition - Offset(node.size.width / 2, 70 - 40);
-                        }
-                      }
-                    }
-
-                    setState(() {});
-                  },
+                  onDragUpdate: (DragUpdateDetails details) =>
+                      widget.controller.setNodePosition(details.localPosition, node.uuid),
                   feedback: Container(decoration: BoxDecoration(color: Colors.red)),
                   child: nodeBase(node),
                 ),

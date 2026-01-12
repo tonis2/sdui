@@ -45,11 +45,10 @@ Widget base(Widget child) {
   return SizedBox(
     width: view.physicalSize.width,
     height: view.physicalSize.height,
-    child: Column(
-      spacing: 10,
+    child: Stack(
       children: [
-        SizedBox(width: 400, height: 70, child: Menu()),
         Expanded(child: child),
+        SizedBox(width: 400, height: 70, child: Menu()),
       ],
     ),
   );
