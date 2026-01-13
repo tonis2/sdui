@@ -13,7 +13,7 @@ class ImageNode extends Node {
     super.label = "Image",
     super.size = const Size(400, 400),
     super.inputs = const [],
-    super.outputs = const [Output(label: "Image picker"), Output(label: "Mask")],
+    super.outputs = const [Output(label: "Image", color: Colors.yellow), Output(label: "Mask")],
     super.offset,
     super.key,
   });

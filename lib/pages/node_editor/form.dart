@@ -111,8 +111,8 @@ class PromptConfig extends Node {
     super.color = Colors.orangeAccent,
     super.label = "Prompt config",
     super.size = const Size(400, 500),
-    super.inputs = const [Input(label: "Images")],
-    super.outputs = const [Output(label: "Prompt")],
+    super.inputs = const [Input(label: "Images", color: Colors.yellow)],
+    super.outputs = const [Output(label: "Prompt", color: Colors.lightGreen)],
     super.offset,
     super.key,
   });
