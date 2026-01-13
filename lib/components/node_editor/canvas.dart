@@ -60,9 +60,9 @@ class Node {
   final List<Input> inputs;
   final List<Output> outputs;
   final Color color;
-  late final String uuid;
-  Size size = Size(100, 100);
-  Offset offset = Offset(0, 0);
+  final String uuid = Uuid().v4();
+  final Size size;
+  Offset offset;
 
   Offset calcOffset(Offset offset) {
     return offset - Offset(size.width / 2, size.height / 2);
@@ -73,11 +73,10 @@ class Node {
     required this.label,
     required this.inputs,
     required this.outputs,
+    this.offset = const Offset(0, 0),
     this.color = const Color.fromRGBO(128, 186, 215, 0.5),
     this.size = const Size(100, 100),
-  }) {
-    uuid = Uuid().v4();
-  }
+  });
 }
 
 class Connection {
@@ -144,11 +143,11 @@ class NodeEditorController extends ChangeNotifier {
       if (previousConnections.isNotEmpty) {
         for (var conn in previousConnections) {
           if (conn.startNode.uuid == node.uuid) {
-            double indexOffset = (conn.endNode!.outputs.length * 9);
-            conn.start = offset + Offset(node.size.width, node.size.height / 2 + 40 - indexOffset);
+            double indexOffset = (conn.startIndex * 40);
+            conn.start = offset + Offset(node.size.width, 45 + indexOffset);
           } else if (conn.endNode?.uuid == node.uuid && conn.endNode != null) {
-            double indexOffset = (conn.endNode!.inputs.length * 9);
-            conn.end = offset + Offset(0, node.size.height / 2 + 40 - indexOffset);
+            double indexOffset = (conn.endIndex! * 40);
+            conn.end = offset + Offset(0, 45 + indexOffset);
           }
         }
       }
@@ -246,7 +245,7 @@ class _State extends State<NodeCanvas> {
   Widget inputRow(Node node) {
     return Column(
       spacing: 15,
-      mainAxisAlignment: .center,
+      mainAxisAlignment: .start,
       crossAxisAlignment: .center,
       children: node.inputs.map((input) {
         int index = node.inputs.indexOf(input);
@@ -266,7 +265,11 @@ class _State extends State<NodeCanvas> {
 
                 // if (previousConnection.isNotEmpty) return;
 
-                widget.controller.addConnection(widget.controller.activeConnection!..endNode = node);
+                widget.controller.addConnection(
+                  widget.controller.activeConnection!
+                    ..endNode = node
+                    ..endIndex = index,
+                );
               } else {
                 var previousConnection = widget.controller.connections.where((conn) => conn.endNode?.uuid == node.uuid);
 
@@ -280,7 +283,7 @@ class _State extends State<NodeCanvas> {
                     Connection(
                       start:
                           connection.startNode.offset +
-                          Offset(connection.startNode.size.width, (connection.startNode.size.height / 2) + 40),
+                          Offset(connection.startNode.size.width, 45 + connection.startIndex * 40),
                       end: details.globalPosition,
                       startNode: connection.startNode,
                       startIndex: connection.startIndex,
@@ -304,12 +307,14 @@ class _State extends State<NodeCanvas> {
   Widget outputRow(Node node) {
     return Column(
       spacing: 15,
-      mainAxisAlignment: .center,
+      mainAxisAlignment: .start,
       crossAxisAlignment: .center,
       children: node.outputs.map((input) {
         int index = node.outputs.indexOf(input);
 
-        Offset offset = node.offset + Offset(node.size.width, node.size.height / 2 + 40 + index * 10);
+        double indexOffset = index > 0 ? index * 40 : 0;
+
+        Offset offset = node.offset + Offset(node.size.width, 45 + indexOffset);
 
         return Tooltip(
           message: input.label,
