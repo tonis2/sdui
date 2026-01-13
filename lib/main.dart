@@ -94,6 +94,7 @@ Widget queueView(BuildContext context) {
                   InkWell(
                     onTap: () {
                       provider.promptQueue.retainWhere((item) => item.endTime == null);
+                      provider.clearImages();
                     },
                     child: Icon(Icons.delete_forever, color: theme.colorScheme.secondary),
                   ),
