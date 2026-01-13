@@ -34,7 +34,7 @@ void main() async {
   // web.window.document.querySelector(".loader")?.remove();
 
   KoboldApi api = KoboldApi(headers: {}, baseUrl: "http://localhost:5001");
-  AppState state = await createState(api: api);
+  AppState state = createState(api: api);
 
   runApp(Main(state: state));
 }
@@ -47,7 +47,7 @@ Widget base(Widget child) {
     height: view.physicalSize.height,
     child: Stack(
       children: [
-        Expanded(child: child),
+        SizedBox(width: view.physicalSize.width, height: view.physicalSize.height, child: child),
         SizedBox(width: 400, height: 70, child: Menu()),
       ],
     ),

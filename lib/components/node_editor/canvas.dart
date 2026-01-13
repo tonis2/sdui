@@ -34,28 +34,24 @@ class _LinePainter extends CustomPainter {
 
 class Input {
   final String label;
-  String? key;
+  final String? key;
   final Color color;
-  final String uuid = const Uuid().v4();
+  final String uuid = "";
 
-  Input({required this.label, this.key, this.color = Colors.lightGreen}) {
-    key ??= label;
-  }
+  const Input({required this.label, this.key, this.color = Colors.lightGreen});
 }
 
 class Output {
   final String label;
-  String? key;
+  final String? key;
   final Color color;
-  final String uuid = Uuid().v4();
+  final String uuid = "";
 
-  Output({required this.label, this.key, this.color = Colors.blue}) {
-    key ??= label;
-  }
+  const Output({required this.label, this.key, this.color = Colors.blue});
 }
 
-class Node {
-  final String id;
+abstract class Node extends StatelessWidget {
+  final String? id;
   final String label;
   final List<Input> inputs;
   final List<Output> outputs;
@@ -69,14 +65,20 @@ class Node {
   }
 
   Node({
-    required this.id,
+    this.id,
     required this.label,
     required this.inputs,
     required this.outputs,
     this.offset = const Offset(0, 0),
     this.color = const Color.fromRGBO(128, 186, 215, 0.5),
     this.size = const Size(100, 100),
+    super.key,
   });
+
+  void execute(NodeEditorController controller) {}
+
+  @override
+  Widget build(BuildContext context) => SizedBox();
 }
 
 class Connection {
@@ -220,7 +222,7 @@ class _State extends State<NodeCanvas> {
           Row(
             children: [
               SizedBox(width: 20, height: node.size.height, child: inputRow(node)),
-              Expanded(child: Column(children: [])),
+              Expanded(child: node.build(context)),
               SizedBox(width: 20, height: node.size.height, child: outputRow(node)),
             ],
           ),

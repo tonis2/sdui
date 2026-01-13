@@ -6,6 +6,9 @@ import '/models/index.dart';
 import '/state.dart';
 import 'package:file_saver/file_saver.dart';
 import 'dart:math';
+import 'form.dart';
+
+import 'nodes.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -20,38 +23,11 @@ class _State extends State<NodeEditor> {
 
   @override
   void initState() {
-    // controller.addNodes([NodeView(controller: controller)]);
-
-    var promptNode = Node(
-      id: "prompt",
-      label: "Prompt",
-      size: Size(300, 400),
-      inputs: [
-        Input(label: "Image"),
-        Input(label: "Mask"),
-      ],
-      outputs: [Output(label: "Prompt")],
-    );
-
-    var image = Node(
-      id: "image",
-      label: "Image",
-      size: Size(300, 300),
-      inputs: [],
-      outputs: [
-        Output(label: "Image"),
-        Output(label: "Mask"),
-      ],
-    );
-
-    var apiNode = Node(
-      id: "generate",
-      label: "Generate",
-      size: Size(200, 200),
-      inputs: [Input(label: "Prompt")],
-      outputs: [],
-    );
-    controller.addNodes([image, promptNode, apiNode]);
+    controller.addNodes([
+      ImageNode(offset: Offset(200, 400)),
+      PromptConfig(offset: Offset(700, 400)),
+      KoboldAPI(offset: Offset(1200, 300)),
+    ]);
     super.initState();
   }
 

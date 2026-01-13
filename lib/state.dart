@@ -9,16 +9,15 @@ import 'package:file_saver/file_saver.dart';
 class Inherited extends InheritedNotifier<AppState> {
   const Inherited({required super.child, super.key, required super.notifier});
   static AppState? of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<Inherited>()!.notifier;
+    return context.dependOnInheritedWidgetOfExactType<Inherited>()?.notifier;
   }
 
   @override
   bool updateShouldNotify(InheritedNotifier<AppState> oldState) => true;
 }
 
-Future<AppState> createState({required KoboldApi api}) async {
+AppState createState({required KoboldApi api}) {
   Hive.registerAdapter(ImageAdapter());
-
   return AppState(api: api);
 }
 

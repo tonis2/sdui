@@ -40,10 +40,10 @@ class _State extends State<GenerateImage> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      AppState provider = Inherited.of(context)!;
-      widthController.text = provider.imagePrompt.width.toString();
-      heightController.text = provider.imagePrompt.height.toString();
-      promptController.text = provider.imagePrompt.prompt.toString();
+      // AppState provider = Inherited.of(context)!;
+      // widthController.text = provider.imagePrompt.width.toString();
+      // heightController.text = provider.imagePrompt.height.toString();
+      // promptController.text = provider.imagePrompt.prompt.toString();
 
       setState(() {});
     });
