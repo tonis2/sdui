@@ -61,7 +61,7 @@ Widget router(AppState appState, String startPage) {
     routerConfig: GoRouter(
       navigatorKey: rootNavigatorKey,
       observers: [],
-      initialLocation: AppRoutes.home,
+      initialLocation: AppRoutes.nodes,
       routes: [
         GoRoute(
           path: AppRoutes.home,

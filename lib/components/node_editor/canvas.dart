@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:collection';
 import 'package:uuid/uuid.dart';
 import 'dart:collection';
+import 'package:vector_math/vector_math_64.dart' as vector;
 
 import 'dart:ui';
 
@@ -131,30 +132,26 @@ class NodeEditorController extends ChangeNotifier {
     }
   }
 
-  void setNodePosition(Offset offset, String uuid) {
-    Node? node = nodes[uuid];
+  void setNodePosition(Offset offset, Node node) {
+    activeConnection = null;
+    node.offset = offset;
 
-    if (node != null) {
-      activeConnection = null;
-      offset = node.calcOffset(offset);
-      nodes[uuid]?.offset = offset;
-      var previousConnections = connections.where(
-        (conn) => conn.startNode.uuid == node.uuid || conn.endNode?.uuid == node.uuid,
-      );
+    var previousConnections = connections.where(
+      (conn) => conn.startNode.uuid == node.uuid || conn.endNode?.uuid == node.uuid,
+    );
 
-      if (previousConnections.isNotEmpty) {
-        for (var conn in previousConnections) {
-          if (conn.startNode.uuid == node.uuid) {
-            double indexOffset = (conn.startIndex * 40);
-            conn.start = offset + Offset(node.size.width, 45 + indexOffset);
-          } else if (conn.endNode?.uuid == node.uuid && conn.endNode != null) {
-            double indexOffset = (conn.endIndex! * 40);
-            conn.end = offset + Offset(0, 45 + indexOffset);
-          }
+    if (previousConnections.isNotEmpty) {
+      for (var conn in previousConnections) {
+        if (conn.startNode.uuid == node.uuid) {
+          double indexOffset = (conn.startIndex * 40);
+          conn.start = offset + Offset(node.size.width, 45 + indexOffset);
+        } else if (conn.endNode?.uuid == node.uuid && conn.endNode != null) {
+          double indexOffset = (conn.endIndex! * 40);
+          conn.end = offset + Offset(0, 45 + indexOffset);
         }
       }
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   void connectNodes(Node startNode, Node endNode, int startIndex, int endInded) {}
@@ -173,6 +170,23 @@ class NodeEditorController extends ChangeNotifier {
     return nodes;
   }
 
+  Node? _findNodeAtPosition(Offset position) {
+    // Find node at the given canvas position
+    for (var entry in nodes.entries) {
+      final node = entry.value;
+      final rect = Rect.fromLTWH(
+        node.offset.dx,
+        node.offset.dy,
+        node.size.width,
+        node.size.height + 40, // Include header
+      );
+      if (rect.contains(position)) {
+        return node;
+      }
+    }
+    return null;
+  }
+
   void addNodes(List<Node> items) {
     for (var node in items) {
       nodes[node.uuid] = node;
@@ -186,8 +200,9 @@ class NodeCanvas extends StatefulWidget {
   NodeEditorController controller;
 
   Size size;
+  Size maxSize;
 
-  NodeCanvas({required this.controller, required this.size, super.key});
+  NodeCanvas({required this.controller, required this.size, this.maxSize = const Size(2000, 2000), super.key});
 
   @override
   State<NodeCanvas> createState() => _State();
@@ -195,6 +210,8 @@ class NodeCanvas extends StatefulWidget {
 
 class _State extends State<NodeCanvas> {
   final TransformationController _transformationController = TransformationController();
+  String? _draggingNodeId;
+  Offset _lastDragPosition = Offset.zero;
 
   void updateCanvas() {
     setState(() {});
@@ -280,7 +297,6 @@ class _State extends State<NodeCanvas> {
                   var connection = previousConnection.first;
 
                   widget.controller.removeConnection(connection);
-
                   widget.controller.setActiveConnection(
                     Connection(
                       start:
@@ -313,9 +329,7 @@ class _State extends State<NodeCanvas> {
       crossAxisAlignment: .center,
       children: node.outputs.map((input) {
         int index = node.outputs.indexOf(input);
-
         double indexOffset = index > 0 ? index * 40 : 0;
-
         Offset offset = node.offset + Offset(node.size.width, 45 + indexOffset);
 
         return Tooltip(
@@ -337,78 +351,98 @@ class _State extends State<NodeCanvas> {
     );
   }
 
+  Offset _transformPosition(Offset screenPosition) {
+    // Transform screen coordinates to canvas coordinates
+    final Matrix4 transform = _transformationController.value;
+    final Matrix4 invertedTransform = Matrix4.inverted(transform);
+    final vector.Vector3 position = invertedTransform.transform3(
+      vector.Vector3(screenPosition.dx, screenPosition.dy, 0),
+    );
+    return Offset(position.x, position.y);
+  }
+
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.sizeOf(context);
+    return Listener(
+      onPointerDown: (event) {
+        final canvasPosition = _transformPosition(event.localPosition);
+        final node = widget.controller._findNodeAtPosition(canvasPosition);
 
-    return SizedBox(
-      width: size.width,
-      height: size.height,
-      child: Listener(
-        onPointerHover: (event) {
-          if (widget.controller.activeConnection != null) {
-            setState(() {
-              widget.controller.activeConnection?.end = event.localPosition;
-            });
+        if (node != null) {
+          setState(() {
+            _draggingNodeId = node.uuid;
+            _lastDragPosition = canvasPosition;
+          });
+        } else {
+          widget.controller.removeActive();
+        }
+      },
+      onPointerHover: (event) {
+        if (widget.controller.activeConnection != null) {
+          final canvasPosition = _transformPosition(event.localPosition);
+          setState(() {
+            widget.controller.activeConnection?.end = canvasPosition;
+          });
+        }
+      },
+      onPointerMove: (details) {
+        final canvasPosition = _transformPosition(details.localPosition);
+
+        if (_draggingNodeId != null) {
+          // Dragging a node
+          final delta = canvasPosition - _lastDragPosition;
+          final node = widget.controller.nodes[_draggingNodeId];
+
+          if (node != null) {
+            widget.controller.setNodePosition(Offset(node.offset.dx + delta.dx, node.offset.dy + delta.dy), node);
+            _lastDragPosition = canvasPosition;
+            setState(() {});
           }
-        },
-        child: Stack(
-          children: [
-            Listener(
-              onPointerDown: (details) {
-                widget.controller.removeActive();
-              },
-              child: CustomPaint(
+        } else if (details.buttons == 4) {
+          // Middle mouse button - pan the view
+          final currentMatrix = _transformationController.value;
+          final currentScale = currentMatrix.getMaxScaleOnAxis();
+          final currentTranslation = currentMatrix.getTranslation();
+
+          final newTranslation = currentTranslation + vector.Vector3(details.delta.dx, details.delta.dy, 0);
+
+          _transformationController.value = Matrix4.identity()
+            ..translateByVector3(newTranslation)
+            ..scaleByVector3(vector.Vector3(currentScale, currentScale, currentScale));
+        }
+      },
+      onPointerUp: (details) {
+        setState(() {
+          _draggingNodeId = null;
+        });
+      },
+      child: InteractiveViewer(
+        transformationController: _transformationController,
+        minScale: 0.1,
+        maxScale: 10,
+        panEnabled: false,
+        scaleEnabled: true,
+        boundaryMargin: EdgeInsets.all(double.infinity),
+        constrained: false,
+        onInteractionStart: (details) {},
+        child: SizedBox(
+          width: widget.size.width,
+          height: widget.size.height,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CustomPaint(
                 painter: _LinePainter(controller: widget.controller),
-                size: widget.size,
+                size: Size(widget.size.width, widget.size.height),
               ),
-            ),
-            ...widget.controller.nodes.entries.map((item) {
-              Node node = item.value;
-              return Positioned(
-                top: node.offset.dy,
-                left: node.offset.dx,
-                child: Draggable(
-                  maxSimultaneousDrags: 1,
-                  onDragUpdate: (DragUpdateDetails details) =>
-                      widget.controller.setNodePosition(details.localPosition, node.uuid),
-                  feedback: Container(decoration: BoxDecoration(color: Colors.red)),
-                  child: nodeBase(node),
-                ),
-              );
-            }),
-          ],
+              ...widget.controller.nodes.entries.map((item) {
+                Node node = item.value;
+                return Positioned(top: node.offset.dy, left: node.offset.dx, child: nodeBase(node));
+              }),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-
-// InteractiveViewer(
-//         transformationController: _transformationController,
-//         boundaryMargin: const EdgeInsets.all(20.0),
-//         minScale: 0.1,
-//         maxScale: 1.6,
-//         child: Expanded(
-//           child: Stack(
-//             children: [
-//               ...widget.controller.nodes.entries.map((item) {
-//                 Node node = item.value;
-//                 return Positioned(
-//                   top: node.offset.dy,
-//                   left: node.offset.dx,
-//                   child: Draggable(
-//                     onDragEnd: (details) {
-//                       item.value.offset = details.offset;
-//                       setState(() {});
-//                     },
-//                     feedback: Container(decoration: BoxDecoration(color: Colors.red)),
-//                     child: Container(width: 100, height: 100, decoration: BoxDecoration(color: Colors.green)),
-//                   ),
-//                 );
-//               }),
-//             ],
-//           ),
-//         ),
-//       )
