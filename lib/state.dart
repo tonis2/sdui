@@ -83,16 +83,16 @@ class AppState extends ChangeNotifier {
   }
 
   void createPromptRequest(ImagePrompt prompt) async {
-    if (painterController.points.isNotEmpty) {
-      prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
+    // if (painterController.points.isNotEmpty) {
+    //   prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
 
-      // Save mask for debugging
-      // await FileSaver.instance.saveFile(
-      //   name: "default",
-      //   mimeType: MimeType.png,
-      //   bytes: provider.imagePrompt.extraImages.first,
-      // );
-    }
+    //   // Save mask for debugging
+    //   // await FileSaver.instance.saveFile(
+    //   //   name: "default",
+    //   //   mimeType: MimeType.png,
+    //   //   bytes: provider.imagePrompt.extraImages.first,
+    //   // );
+    // }
 
     var queue = QueueItem(
       prompt:

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:sdui/models/index.dart';
 import 'dart:math';
 import '/state.dart';
 import 'package:flutter/services.dart';
 import '/components/node_editor/index.dart';
+import 'dart:ui' as ui;
+import 'nodes.dart';
 
 enum FormInputType { text, textArea, range, int, double }
 
@@ -106,12 +109,15 @@ class FormInput {
   }
 }
 
-class PromptConfig extends Node {
+class PromptConfig extends Node<ImagePrompt> {
   PromptConfig({
     super.color = Colors.orangeAccent,
     super.label = "Prompt config",
-    super.size = const Size(400, 500),
-    super.inputs = const [Input(label: "Images", color: Colors.yellow)],
+    super.size = const Size(400, 600),
+    super.inputs = const [
+      Input(label: "Extra images", color: Colors.yellow),
+      Input(label: "Init images", color: Colors.yellow),
+    ],
     super.outputs = const [Output(label: "Prompt", color: Colors.lightGreen)],
     super.offset,
     super.key,
@@ -135,18 +141,52 @@ class PromptConfig extends Node {
   final _formKey = GlobalKey<FormState>();
 
   @override
-  void execute(NodeEditorController controller) {
-    print("error");
-    super.execute(controller);
+  Future<ImagePrompt> execute(BuildContext context) async {
+    NodeEditorController? provider = NodeControls.of(context);
+
+    ImagePrompt prompt = ImagePrompt(
+      prompt: formInputs[0].controller.text,
+      negativePrompt: formInputs[1].controller.text,
+      seed: int.parse(formInputs[2].controller.text),
+      sampler: formInputs[3].controller.text,
+      steps: int.parse(formInputs[4].controller.text),
+      guidance: double.parse(formInputs[5].controller.text),
+      noiseStrenght: double.parse(formInputs[6].controller.text),
+      frames: int.parse(formInputs[8].controller.text),
+      clipSkip: int.parse(formInputs[9].controller.text),
+      width: int.parse(formInputs[10].controller.text),
+      height: int.parse(formInputs[11].controller.text),
+    );
+
+    try {
+      for (var node in provider!.incomingNodes<ImageOutput>(this, 0)) {
+        ImageOutput image = await node.execute(context);
+        prompt.extraImages.add(image.data);
+      }
+
+      for (var node in provider.incomingNodes<ImageOutput>(this, 1)) {
+        ImageOutput image = await node.execute(context);
+        prompt.initImages.add(image.data);
+      }
+    } catch (err) {
+      print(err.toString());
+    }
+
+    return prompt;
   }
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
     return Column(
       children: [
         Form(
           key: _formKey,
-          child: Wrap(spacing: 5, runSpacing: 8, children: formInputs.map((item) => item.build(context)).toList()),
+          child: SizedBox(
+            width: size.width,
+            height: size.height - 40,
+            child: Wrap(spacing: 5, runSpacing: 8, children: formInputs.map((item) => item.build(context)).toList()),
+          ),
         ),
       ],
     );

@@ -38,7 +38,6 @@ class Input {
   final String? key;
   final Color color;
   final String uuid = "";
-
   const Input({required this.label, this.key, this.color = Colors.lightGreen});
 }
 
@@ -47,11 +46,10 @@ class Output {
   final String? key;
   final Color color;
   final String uuid = "";
-
   const Output({required this.label, this.key, this.color = Colors.blue});
 }
 
-abstract class Node extends StatelessWidget {
+abstract class Node<T> extends StatelessWidget {
   final String? id;
   final String label;
   final List<Input> inputs;
@@ -76,7 +74,7 @@ abstract class Node extends StatelessWidget {
     super.key,
   });
 
-  void execute(NodeEditorController controller) {}
+  Future<T> execute(BuildContext context) async => Future.value();
 
   @override
   Widget build(BuildContext context) => SizedBox();
@@ -172,16 +170,23 @@ class NodeEditorController extends ChangeNotifier {
   void connectNodes(Node startNode, Node endNode, int startIndex, int endInded) {}
 
   // Return connected nodes for the node at index
-  List<Node> connectedNodes(Node node, int index) {
-    List<Node> nodes = [];
+  List<Node<T>> outGoingNodes<T>(Node node, int index) {
+    List<Node<T>> nodes = [];
     for (var conn in connections) {
       if (conn.startNode.uuid == node.uuid && conn.startIndex == index && conn.endNode != null) {
-        nodes.add(conn.endNode!);
-      } else if (conn.endNode?.uuid == node.uuid && conn.endIndex == index) {
-        nodes.add(conn.startNode);
+        nodes.add(conn.endNode! as Node<T>);
       }
     }
+    return nodes;
+  }
 
+  List<Node<T>> incomingNodes<T>(Node node, int index) {
+    List<Node<T>> nodes = [];
+    for (var conn in connections) {
+      if (conn.endNode?.uuid == node.uuid && conn.endIndex == index) {
+        nodes.add(conn.startNode as Node<T>);
+      }
+    }
     return nodes;
   }
 
@@ -212,16 +217,17 @@ class NodeEditorController extends ChangeNotifier {
 }
 
 class NodeCanvas extends StatefulWidget {
-  static Widget build(NodeEditorController controller, Size size) {
+  static Widget build(NodeEditorController controller, Size size, {double zoom = 1.0}) {
     return NodeControls(
       notifier: controller,
-      child: NodeCanvas(size: size, controller: controller),
+      child: NodeCanvas(size: size, controller: controller, zoom: zoom),
     );
   }
 
   NodeEditorController controller;
   Size size;
-  NodeCanvas({required this.controller, required this.size, super.key});
+  double zoom;
+  NodeCanvas({required this.controller, required this.size, this.zoom = 1.0, super.key});
 
   @override
   State<NodeCanvas> createState() => _State();
@@ -270,6 +276,8 @@ class _State extends State<NodeCanvas> {
   @override
   void initState() {
     widget.controller.addListener(updateCanvas);
+    _transformationController.value = Matrix4.identity()
+      ..scaleByVector3(vector.Vector3(widget.zoom, widget.zoom, widget.zoom));
     super.initState();
   }
 
@@ -443,7 +451,7 @@ class _State extends State<NodeCanvas> {
         scaleEnabled: true,
         boundaryMargin: EdgeInsets.all(double.infinity),
         constrained: false,
-        onInteractionStart: (details) {},
+        // onInteractionStart: (details) {},
         child: SizedBox(
           width: widget.size.width,
           height: widget.size.height,

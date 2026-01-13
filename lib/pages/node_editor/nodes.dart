@@ -2,12 +2,19 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:sdui/models/index.dart';
 
 import 'dart:ui' as ui;
-
+import '/state.dart';
 import '/components/node_editor/index.dart';
 
-class ImageNode extends Node {
+class ImageOutput {
+  Uint8List data;
+  Size size;
+  ImageOutput({required this.data, required this.size});
+}
+
+class ImageNode extends Node<ImageOutput> {
   ImageNode({
     super.color = Colors.lightGreen,
     super.label = "Image",
@@ -22,9 +29,9 @@ class ImageNode extends Node {
   Uint8List? data;
 
   @override
-  void execute(NodeEditorController controller) {
-    print("error");
-    super.execute(controller);
+  Future<ImageOutput> execute(BuildContext context) async {
+    if (image == null) throw Exception("Image is empty");
+    return ImageOutput(data: data!, size: Size(image!.width.toDouble(), image!.height.toDouble()));
   }
 
   void pickImage(BuildContext context) async {
@@ -101,14 +108,30 @@ class KoboldAPI extends Node {
   });
 
   @override
-  void execute(NodeEditorController controller) {
+  Future<void> execute(BuildContext context) async {
     print("error");
-    super.execute(controller);
+  }
+
+  void sendToApi(BuildContext context) async {
+    NodeEditorController? editor = NodeControls.of(context);
+    AppState provider = Inherited.of(context)!;
+
+    for (var node in editor!.incomingNodes<ImagePrompt>(this, 0)) {
+      ImagePrompt prompt = await node.execute(context);
+      provider.createPromptRequest(prompt);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
-    return Column(children: [Text("Prompt config", style: theme.textTheme.bodyMedium)]);
+    return Column(
+      children: [
+        TextButton(
+          onPressed: () => sendToApi(context),
+          child: Text("Send to API", style: theme.textTheme.bodyLarge),
+        ),
+      ],
+    );
   }
 }

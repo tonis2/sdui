@@ -24,8 +24,9 @@ class _State extends State<NodeEditor> {
   @override
   void initState() {
     controller.addNodes([
-      ImageNode(offset: Offset(200, 400)),
-      PromptConfig(offset: Offset(700, 400)),
+      ImageNode(offset: Offset(200, 300)),
+      ImageNode(offset: Offset(200, 750)),
+      PromptConfig(offset: Offset(700, 300)),
       KoboldAPI(offset: Offset(1200, 300)),
     ]);
     super.initState();
@@ -33,6 +34,6 @@ class _State extends State<NodeEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return NodeCanvas.build(controller, Size(3000, 3000));
+    return NodeCanvas.build(controller, Size(3000, 3000), zoom: 0.5);
   }
 }

@@ -117,71 +117,6 @@ class _State extends State<GenerateImage> {
     }
   }
 
-  Widget queueView() {
-    AppState provider = Inherited.of(context)!;
-    ThemeData theme = Theme.of(context);
-    return Align(
-      alignment: .center,
-      child: SizedBox(
-        width: 500,
-        height: 110,
-        child: SingleChildScrollView(
-          scrollDirection: .horizontal,
-          child: Row(
-            mainAxisSize: .min,
-            mainAxisAlignment: .start,
-            crossAxisAlignment: .start,
-            children: provider.promptQueue.map((item) {
-              MemoryImage? image;
-
-              if (item.image != null) {
-                image = MemoryImage(item.image!);
-              }
-
-              return SizedBox(
-                width: 350,
-                child: Row(
-                  mainAxisSize: .min,
-                  mainAxisAlignment: .start,
-                  crossAxisAlignment: .start,
-                  spacing: 10,
-                  children: [
-                    if (image != null) Image(image: ResizeImage(image, width: 60, height: 60)),
-                    Column(
-                      mainAxisSize: .min,
-                      spacing: 5,
-                      children: [
-                        if (item.startTime != null)
-                          Text(
-                            "Start time: ${item.startTime.toString().split(" ")[1]}",
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        if (item.endTime != null)
-                          Text("End time: ${item.endTime.toString().split(" ")[1]}", style: theme.textTheme.bodySmall),
-                        if (item.endTime != null && item.startTime != null)
-                          Text(
-                            "Time spent: ${item.endTime!.difference(item.startTime!).toString()}",
-                            style: theme.textTheme.bodySmall,
-                          ),
-                      ],
-                    ),
-                    InkWell(
-                      onTap: () {
-                        provider.promptQueue.retainWhere((item) => item.endTime == null);
-                        setState(() {});
-                      },
-                      child: Icon(Icons.delete_forever, color: theme.colorScheme.secondary),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
   FilteringTextInputFormatter doubleInputFilter = FilteringTextInputFormatter.allow(RegExp(r'(^\d*[\.]?\d{0,2})'));
   OutlineInputBorder inputBorder = OutlineInputBorder(borderSide: BorderSide(color: Colors.black, width: 1));
 
@@ -202,7 +137,6 @@ class _State extends State<GenerateImage> {
           child: Column(
             spacing: 10,
             children: [
-              if (provider.promptQueue.isNotEmpty) queueView(),
               SizedBox(
                 width: size.width * 0.45,
                 height: 580,

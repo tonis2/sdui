@@ -9,11 +9,7 @@ class MenuItem {
   MenuItem({required this.link, required this.name});
 }
 
-var menuItems = [
-  MenuItem(link: AppRoutes.home, name: "home"),
-  MenuItem(link: AppRoutes.gallery, name: "gallery"),
-  MenuItem(link: AppRoutes.nodes, name: "nodes"),
-];
+var menuItems = [MenuItem(link: AppRoutes.home, name: "home"), MenuItem(link: AppRoutes.gallery, name: "gallery")];
 
 class Menu extends StatefulWidget {
   const Menu({super.key});
