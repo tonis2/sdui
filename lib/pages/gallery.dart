@@ -20,11 +20,6 @@ class Gallery extends StatefulWidget {
 class _State extends State<Gallery> {
   int activePage = 1;
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
   void openGallery(BackgroundImage image, int index) {
     AppState provider = Inherited.of(context)!;
 

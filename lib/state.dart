@@ -13,7 +13,7 @@ class Inherited extends InheritedNotifier<AppState> {
   }
 
   @override
-  bool updateShouldNotify(InheritedNotifier<AppState> oldState) => true;
+  bool updateShouldNotify(InheritedNotifier<AppState> oldWidget) => true;
 }
 
 AppState createState({required KoboldApi api}) {

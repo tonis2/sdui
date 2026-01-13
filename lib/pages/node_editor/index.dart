@@ -33,6 +33,6 @@ class _State extends State<NodeEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return NodeCanvas(size: Size(2000, 2000), controller: controller);
+    return NodeCanvas.build(controller, Size(3000, 3000));
   }
 }

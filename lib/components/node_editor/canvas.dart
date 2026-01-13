@@ -100,6 +100,15 @@ class Connection {
   });
 }
 
+class NodeControls extends InheritedNotifier<NodeEditorController> {
+  const NodeControls({required super.child, super.key, required super.notifier});
+  static NodeEditorController? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<NodeControls>()?.notifier;
+
+  @override
+  bool updateShouldNotify(InheritedNotifier<NodeEditorController> oldWidget) => true;
+}
+
 class NodeEditorController extends ChangeNotifier {
   final Map<String, Node> nodes = HashMap();
   List<Connection> connections = [];
@@ -107,6 +116,10 @@ class NodeEditorController extends ChangeNotifier {
   Connection? activeConnection;
 
   NodeEditorController();
+
+  void requestUpdate(String uuid) {
+    notifyListeners();
+  }
 
   void setActiveConnection(Connection connection) {
     activeConnection = connection;
@@ -140,14 +153,16 @@ class NodeEditorController extends ChangeNotifier {
       (conn) => conn.startNode.uuid == node.uuid || conn.endNode?.uuid == node.uuid,
     );
 
+    double headerSize = 40;
+
     if (previousConnections.isNotEmpty) {
       for (var conn in previousConnections) {
         if (conn.startNode.uuid == node.uuid) {
-          double indexOffset = (conn.startIndex * 40);
-          conn.start = offset + Offset(node.size.width, 45 + indexOffset);
+          double indexOffset = (conn.startIndex * headerSize);
+          conn.start = offset + Offset(node.size.width, headerSize + 5 + indexOffset);
         } else if (conn.endNode?.uuid == node.uuid && conn.endNode != null) {
-          double indexOffset = (conn.endIndex! * 40);
-          conn.end = offset + Offset(0, 45 + indexOffset);
+          double indexOffset = (conn.endIndex! * headerSize);
+          conn.end = offset + Offset(0, headerSize + 5 + indexOffset);
         }
       }
     }
@@ -197,12 +212,16 @@ class NodeEditorController extends ChangeNotifier {
 }
 
 class NodeCanvas extends StatefulWidget {
+  static Widget build(NodeEditorController controller, Size size) {
+    return NodeControls(
+      notifier: controller,
+      child: NodeCanvas(size: size, controller: controller),
+    );
+  }
+
   NodeEditorController controller;
-
   Size size;
-  Size maxSize;
-
-  NodeCanvas({required this.controller, required this.size, this.maxSize = const Size(2000, 2000), super.key});
+  NodeCanvas({required this.controller, required this.size, super.key});
 
   @override
   State<NodeCanvas> createState() => _State();

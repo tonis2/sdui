@@ -21,12 +21,12 @@ class FormInput {
   String? defaultValue;
   FormInput({
     required this.label,
+    required this.type,
     this.min = 64,
     this.max = 1024,
     this.width = 100,
     this.height = 60,
     this.defaultValue,
-    required this.type,
   }) {
     if (defaultValue != null) controller = TextEditingController(text: defaultValue);
   }
@@ -102,8 +102,6 @@ class FormInput {
             ),
           );
         }
-      default:
-        return SizedBox();
     }
   }
 }
@@ -144,7 +142,6 @@ class PromptConfig extends Node {
 
   @override
   Widget build(BuildContext context) {
-    ThemeData theme = Theme.of(context);
     return Column(
       children: [
         Form(
