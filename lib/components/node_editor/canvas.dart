@@ -1,12 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'dart:collection';
 import 'package:uuid/uuid.dart';
-import 'dart:collection';
+import 'dart:math';
 import 'package:vector_math/vector_math_64.dart' as vector;
-
-import 'dart:ui';
 
 class _LinePainter extends CustomPainter {
   final NodeEditorController controller;
@@ -49,7 +45,7 @@ class Output {
   const Output({required this.label, this.key, this.color = Colors.blue});
 }
 
-abstract class Node<T> extends StatelessWidget {
+abstract class Node extends StatelessWidget {
   final String? id;
   final String label;
   final List<Input> inputs;
@@ -74,7 +70,7 @@ abstract class Node<T> extends StatelessWidget {
     super.key,
   });
 
-  Future<T> execute(BuildContext context) async => Future.value();
+  Future<dynamic> execute(BuildContext context) async => Future.value();
 
   @override
   Widget build(BuildContext context) => SizedBox();
@@ -151,16 +147,14 @@ class NodeEditorController extends ChangeNotifier {
       (conn) => conn.startNode.uuid == node.uuid || conn.endNode?.uuid == node.uuid,
     );
 
-    double headerSize = 40;
-
     if (previousConnections.isNotEmpty) {
       for (var conn in previousConnections) {
         if (conn.startNode.uuid == node.uuid) {
-          double indexOffset = (conn.startIndex * headerSize);
-          conn.start = offset + Offset(node.size.width, headerSize + 5 + indexOffset);
+          double indexOffset = conn.startIndex > 0 ? conn.startIndex * headerOffset - 5 : nodeOffset / 2;
+          conn.start = offset + Offset(node.size.width, headerOffset + nodeOffset + indexOffset);
         } else if (conn.endNode?.uuid == node.uuid && conn.endNode != null) {
-          double indexOffset = (conn.endIndex! * headerSize);
-          conn.end = offset + Offset(0, headerSize + 5 + indexOffset);
+          double indexOffset = conn.endIndex! > 0 ? conn.endIndex! * headerOffset - 5 : nodeOffset / 2;
+          conn.end = offset + Offset(0, headerOffset + nodeOffset + indexOffset);
         }
       }
     }
@@ -170,21 +164,21 @@ class NodeEditorController extends ChangeNotifier {
   void connectNodes(Node startNode, Node endNode, int startIndex, int endInded) {}
 
   // Return connected nodes for the node at index
-  List<Node<T>> outGoingNodes<T>(Node node, int index) {
-    List<Node<T>> nodes = [];
+  List<Node> outGoingNodes<T>(Node node, int index) {
+    List<Node> nodes = [];
     for (var conn in connections) {
       if (conn.startNode.uuid == node.uuid && conn.startIndex == index && conn.endNode != null) {
-        nodes.add(conn.endNode! as Node<T>);
+        nodes.add(conn.endNode!);
       }
     }
     return nodes;
   }
 
-  List<Node<T>> incomingNodes<T>(Node node, int index) {
-    List<Node<T>> nodes = [];
+  List<Node> incomingNodes<T>(Node node, int index) {
+    List<Node> nodes = [];
     for (var conn in connections) {
       if (conn.endNode?.uuid == node.uuid && conn.endIndex == index) {
-        nodes.add(conn.startNode as Node<T>);
+        nodes.add(conn.startNode);
       }
     }
     return nodes;
@@ -198,7 +192,7 @@ class NodeEditorController extends ChangeNotifier {
         node.offset.dx,
         node.offset.dy,
         node.size.width,
-        node.size.height + 40, // Include header
+        node.size.height + headerOffset, // Include header
       );
       if (rect.contains(position)) {
         return node;
@@ -215,6 +209,9 @@ class NodeEditorController extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+double headerOffset = 50;
+double nodeOffset = 20;
 
 class NodeCanvas extends StatefulWidget {
   static Widget build(NodeEditorController controller, Size size, {double zoom = 1.0}) {
@@ -247,12 +244,12 @@ class _State extends State<NodeCanvas> {
 
     return Container(
       width: node.size.width,
-      height: node.size.height + 40,
+      height: node.size.height + headerOffset + nodeOffset,
       decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(10)),
       child: Column(
         children: [
           Container(
-            height: 40,
+            height: headerOffset,
             width: node.size.width,
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             decoration: BoxDecoration(
@@ -263,9 +260,19 @@ class _State extends State<NodeCanvas> {
           ),
           Row(
             children: [
-              SizedBox(width: 20, height: node.size.height, child: inputRow(node)),
+              Container(
+                margin: EdgeInsets.only(top: nodeOffset, right: 5),
+                width: 20,
+                height: node.size.height,
+                child: inputRow(node),
+              ),
               Expanded(child: node.build(context)),
-              SizedBox(width: 20, height: node.size.height, child: outputRow(node)),
+              Container(
+                margin: EdgeInsets.only(top: nodeOffset, left: 5),
+                width: 20,
+                height: node.size.height,
+                child: outputRow(node),
+              ),
             ],
           ),
         ],
@@ -323,12 +330,14 @@ class _State extends State<NodeCanvas> {
                 if (previousConnection.isNotEmpty) {
                   var connection = previousConnection.first;
 
+                  double indexOffset = index > 0
+                      ? (index * headerOffset) + headerOffset + nodeOffset - 5
+                      : headerOffset + nodeOffset + 10;
+
                   widget.controller.removeConnection(connection);
                   widget.controller.setActiveConnection(
                     Connection(
-                      start:
-                          connection.startNode.offset +
-                          Offset(connection.startNode.size.width, 45 + connection.startIndex * 40),
+                      start: connection.startNode.offset + Offset(connection.startNode.size.width, indexOffset),
                       end: details.globalPosition,
                       startNode: connection.startNode,
                       startIndex: connection.startIndex,
@@ -356,8 +365,10 @@ class _State extends State<NodeCanvas> {
       crossAxisAlignment: .center,
       children: node.outputs.map((input) {
         int index = node.outputs.indexOf(input);
-        double indexOffset = index > 0 ? index * 40 : 0;
-        Offset offset = node.offset + Offset(node.size.width, 45 + indexOffset);
+        double indexOffset = index > 0
+            ? (index * headerOffset) + headerOffset + nodeOffset - 5
+            : headerOffset + nodeOffset + 10;
+        Offset offset = node.offset + Offset(node.size.width, indexOffset);
 
         return Tooltip(
           message: input.label,

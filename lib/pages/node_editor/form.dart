@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:sdui/models/index.dart';
-import 'dart:math';
-import '/state.dart';
 import 'package:flutter/services.dart';
 import '/components/node_editor/index.dart';
-import 'dart:ui' as ui;
 import 'nodes.dart';
 
 enum FormInputType { text, textArea, range, int, double }
@@ -109,11 +105,11 @@ class FormInput {
   }
 }
 
-class PromptConfig extends Node<ImagePrompt> {
+class PromptConfig extends Node {
   PromptConfig({
     super.color = Colors.orangeAccent,
     super.label = "Prompt config",
-    super.size = const Size(400, 600),
+    super.size = const Size(500, 600),
     super.inputs = const [
       Input(label: "Extra images", color: Colors.yellow),
       Input(label: "Init images", color: Colors.yellow),
@@ -124,8 +120,8 @@ class PromptConfig extends Node<ImagePrompt> {
   });
 
   List<FormInput> formInputs = [
-    FormInput(label: "Prompt", type: .textArea, width: 350, height: 100),
-    FormInput(label: "Negative prompt", type: .textArea, width: 350, height: 100),
+    FormInput(label: "Prompt", type: .textArea, width: 450, height: 100),
+    FormInput(label: "Negative prompt", type: .textArea, width: 450, height: 100),
     FormInput(label: "Seed", type: .int, defaultValue: "-1"),
     FormInput(label: "Sampler", type: .text, defaultValue: "euler"),
     FormInput(label: "Steps", type: .int, defaultValue: "8"),
@@ -134,8 +130,8 @@ class PromptConfig extends Node<ImagePrompt> {
     FormInput(label: "Scheduler", type: .text, defaultValue: "default"),
     FormInput(label: "Frames", type: .int, defaultValue: "0"),
     FormInput(label: "Clip skip", type: .int, defaultValue: "0"),
-    FormInput(label: "Width", type: .range, defaultValue: "1024", width: 175),
-    FormInput(label: "Height", type: .range, defaultValue: "1024", width: 175),
+    FormInput(label: "Width", type: .range, defaultValue: "1024", width: 220),
+    FormInput(label: "Height", type: .range, defaultValue: "1024", width: 220),
   ];
 
   final _formKey = GlobalKey<FormState>();

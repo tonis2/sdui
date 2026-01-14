@@ -4,7 +4,6 @@ import '/services/api.dart';
 import '/components/index.dart';
 export '/services/api.dart';
 import '/models/index.dart';
-import 'package:file_saver/file_saver.dart';
 
 class Inherited extends InheritedNotifier<AppState> {
   const Inherited({required super.child, super.key, required super.notifier});
@@ -31,7 +30,7 @@ class AppState extends ChangeNotifier {
   CanvasController painterController = CanvasController(paintColor: Colors.white);
   ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "", seed: 10);
   KoboldApi api;
-  late Box<BackgroundImage> images;
+  Box<BackgroundImage>? images;
   List<QueueItem> promptQueue = [];
   int imagesOnPage = 15;
 
@@ -52,7 +51,7 @@ class AppState extends ChangeNotifier {
 
           if (response.images.isNotEmpty) {
             // painterController.setBackground(newImage);
-            images.add(
+            images?.add(
               BackgroundImage(
                 width: lastPrompt.prompt.width,
                 height: lastPrompt.prompt.height,

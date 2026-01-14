@@ -28,16 +28,16 @@ class _State extends State<Gallery> {
 
     int startIndex = (activePage - 1) * provider.imagesOnPage;
 
-    var images = provider.images.values.toList().getRange(
+    var images = provider.images?.values.toList().getRange(
       startIndex,
-      min(startIndex + provider.imagesOnPage, provider.images.length),
+      min(startIndex + provider.imagesOnPage, provider.images?.length ?? 0),
     );
 
     SwipeImageGallery(
       context: context,
       transitionDuration: 200,
       initialIndex: index,
-      children: images
+      children: images!
           .map(
             (img) => InkWell(
               onTap: () {
@@ -70,9 +70,9 @@ class _State extends State<Gallery> {
 
     int startIndex = (activePage - 1) * provider.imagesOnPage;
 
-    var images = provider.images.values.toList().getRange(
+    var images = provider.images?.values.toList().getRange(
       startIndex,
-      min(startIndex + provider.imagesOnPage, provider.images.length),
+      min(startIndex + provider.imagesOnPage, provider.images?.length ?? 0),
     );
 
     Widget imageView(BackgroundImage image) {
@@ -189,7 +189,7 @@ class _State extends State<Gallery> {
         maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
         listViewBuilderOptions:
             ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: images.indexed
+        children: images!.indexed
             .map((image) => InkWell(onTap: () => openGallery(image.$2, image.$1), child: imageView(image.$2)))
             .toList(),
       ),
@@ -204,16 +204,17 @@ class _State extends State<Gallery> {
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
         children: [
-          if (provider.images.values.isEmpty) Text("Gallery is empty", style: theme.textTheme.bodyLarge),
-          if (provider.images.isNotEmpty) galleryView(),
+          if (provider.images == null || provider.images!.values.isEmpty)
+            Text("Gallery is empty", style: theme.textTheme.bodyLarge),
+          if (provider.images != null && provider.images!.isNotEmpty) galleryView(),
 
-          if (provider.images.length > provider.imagesOnPage)
+          if (provider.images != null && provider.images!.length > provider.imagesOnPage)
             Container(
               width: 545,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
                 activePage: activePage,
-                totalPages: (provider.images.length / provider.imagesOnPage).ceil(),
+                totalPages: (provider.images!.length / provider.imagesOnPage).ceil(),
                 onSelect: (page) {
                   setState(() {
                     activePage = page;

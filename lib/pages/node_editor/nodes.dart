@@ -14,7 +14,7 @@ class ImageOutput {
   ImageOutput({required this.data, required this.size});
 }
 
-class ImageNode extends Node<ImageOutput> {
+class ImageNode extends Node {
   ImageNode({
     super.color = Colors.lightGreen,
     super.label = "Image",
@@ -98,7 +98,7 @@ class ImageNode extends Node<ImageOutput> {
 }
 
 class KoboldAPI extends Node {
-  KoboldAPI({
+  KoboldAPI({super.key, 
     super.color = Colors.lightBlue,
     super.label = "KoboldAPI",
     super.size = const Size(300, 300),
@@ -108,8 +108,9 @@ class KoboldAPI extends Node {
   });
 
   @override
-  Future<void> execute(BuildContext context) async {
+  Future<dynamic> execute(BuildContext context) async {
     print("error");
+    return Future.value();
   }
 
   void sendToApi(BuildContext context) async {

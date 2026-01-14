@@ -129,6 +129,7 @@ Widget router(AppState appState, String startPage) {
   return MaterialApp.router(
     debugShowCheckedModeBanner: false,
     title: 'SDUI',
+    theme: appThemeData,
     routerConfig: GoRouter(
       navigatorKey: rootNavigatorKey,
       observers: [],
