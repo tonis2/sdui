@@ -95,7 +95,7 @@ class AppState extends ChangeNotifier {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               spacing: 10,
               children: [
-                TextFormField(
+                TextField(
                   obscureText: true,
                   decoration: InputDecoration(label: Text("Password", style: theme.textTheme.bodyMedium)),
                   onChanged: (value) => password = value,
