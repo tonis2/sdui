@@ -123,27 +123,22 @@ class AppState extends ChangeNotifier {
           ),
         );
       },
-    ).then((response) {
-      if (response != null && response.toString().isNotEmpty) {
-        // User provided password
-        Hive.openLazyBox<BackgroundImage>(
-              'images',
-              encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
-            )
-            .then((response) {
-              images = response;
-              if (isNewBox) {
-                settings.put('imagesEncrypted', true);
-              }
-            })
-            .catchError((err) {
-              print(err);
-            });
-      } else if (isNewBox) {
-        // New box without encryption
-        Hive.openLazyBox<BackgroundImage>('images').then((response) => images = response).catchError((err) {
-          print(err);
-        });
+    ).then((response) async {
+      try {
+        if (response != null && response.toString().isNotEmpty) {
+          // User provided password
+          images = await Hive.openLazyBox<BackgroundImage>(
+            'images',
+            encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
+          );
+
+          if (isNewBox) settings.put('imagesEncrypted', true);
+        } else if (isNewBox) {
+          // New box without encryption
+          images = await Hive.openLazyBox<BackgroundImage>('images');
+        }
+      } catch (err) {
+        print(err.toString());
       }
     });
   }

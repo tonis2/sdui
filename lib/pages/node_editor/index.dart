@@ -24,7 +24,7 @@ class _State extends State<NodeEditor> {
 
     controller.addNodes([
       ImageNode(offset: Offset(200, 300)),
-      ImageNode(offset: Offset(200, 750)),
+      ImageNode(offset: Offset(200, 850)),
       PromptConfig(offset: Offset(700, 300)),
       KoboldAPI(offset: Offset(1300, 300)),
     ]);
