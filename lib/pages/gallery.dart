@@ -18,20 +18,41 @@ class Gallery extends StatefulWidget {
 }
 
 class _State extends State<Gallery> {
+  List<BackgroundImage> images = [];
   int activePage = 1;
 
-  void openGallery(BackgroundImage image, int index) {
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadImages(1));
+    super.initState();
+  }
+
+  void loadImages(int page) async {
+    activePage = page;
+    images = [];
+
     AppState provider = Inherited.of(context)!;
+    int startIndex = (page - 1) * provider.imagesOnPage;
 
-    ThemeData theme = Theme.of(context);
-    Size size = MediaQuery.sizeOf(context);
-
-    int startIndex = (activePage - 1) * provider.imagesOnPage;
-
-    var images = provider.images?.values.toList().getRange(
+    var keys = provider.images?.keys.toList().getRange(
       startIndex,
       min(startIndex + provider.imagesOnPage, provider.images?.length ?? 0),
     );
+
+    // Load images from keys
+    if (keys != null) {
+      for (var key in keys) {
+        var image = await provider.images?.get(key);
+        if (image != null) images.add(image);
+      }
+    }
+
+    setState(() {});
+  }
+
+  void openGallery(BackgroundImage image, int index) {
+    ThemeData theme = Theme.of(context);
+    Size size = MediaQuery.sizeOf(context);
 
     SwipeImageGallery(
       context: context,
@@ -68,13 +89,6 @@ class _State extends State<Gallery> {
   Widget galleryView() {
     AppState provider = Inherited.of(context)!;
 
-    int startIndex = (activePage - 1) * provider.imagesOnPage;
-
-    var images = provider.images?.values.toList().getRange(
-      startIndex,
-      min(startIndex + provider.imagesOnPage, provider.images?.length ?? 0),
-    );
-
     Widget imageView(BackgroundImage image) {
       return Stack(
         children: [
@@ -94,6 +108,7 @@ class _State extends State<Gallery> {
                       child: Icon(Icons.delete, color: Colors.white),
                     ),
                     onTap: () {
+                      images.removeWhere((img) => img.key == image.key);
                       image.delete();
                       setState(() {});
                     },
@@ -189,9 +204,9 @@ class _State extends State<Gallery> {
         maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
         listViewBuilderOptions:
             ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: images!.indexed
-            .map((image) => InkWell(onTap: () => openGallery(image.$2, image.$1), child: imageView(image.$2)))
-            .toList(),
+        children: images!.indexed.map((image) {
+          return InkWell(onTap: () => openGallery(image.$2, image.$1), child: imageView(image.$2));
+        }).toList(),
       ),
     );
   }
@@ -204,9 +219,8 @@ class _State extends State<Gallery> {
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
         children: [
-          if (provider.images == null || provider.images!.values.isEmpty)
-            Text("Gallery is empty", style: theme.textTheme.bodyLarge),
-          if (provider.images != null && provider.images!.isNotEmpty) galleryView(),
+          if (images.isEmpty) Text("Gallery is empty", style: theme.textTheme.bodyLarge),
+          if (images.isNotEmpty) galleryView(),
 
           if (provider.images != null && provider.images!.length > provider.imagesOnPage)
             Container(
@@ -215,11 +229,7 @@ class _State extends State<Gallery> {
               child: Pagination(
                 activePage: activePage,
                 totalPages: (provider.images!.length / provider.imagesOnPage).ceil(),
-                onSelect: (page) {
-                  setState(() {
-                    activePage = page;
-                  });
-                },
+                onSelect: (page) => loadImages(page),
               ),
             ),
         ],

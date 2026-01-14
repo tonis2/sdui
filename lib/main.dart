@@ -34,7 +34,7 @@ void main() async {
   // web.window.document.querySelector(".loader")?.remove();
 
   KoboldApi api = KoboldApi(headers: {}, baseUrl: "http://localhost:5001");
-  AppState state = createState(api: api);
+  AppState state = await createState(api: api);
 
   runApp(Main(state: state));
 }
@@ -86,7 +86,7 @@ Widget queueView(BuildContext context) {
                         Text("End time: ${item.endTime.toString().split(" ")[1]}", style: theme.textTheme.bodySmall),
                       if (item.endTime != null && item.startTime != null)
                         Text(
-                          "Time spent: ${item.endTime!.difference(item.startTime!).toString()}",
+                          "Time spent: ${item.endTime!.difference(item.startTime!).toString().split(".")[0]}",
                           style: theme.textTheme.bodySmall,
                         ),
                     ],
@@ -96,7 +96,7 @@ Widget queueView(BuildContext context) {
                       provider.promptQueue.retainWhere((item) => item.endTime == null);
                       provider.clearImages();
                     },
-                    child: Icon(Icons.delete_forever, color: theme.colorScheme.secondary),
+                    child: Icon(Icons.delete_forever, color: theme.colorScheme.tertiary),
                   ),
                 ],
               ),
@@ -112,6 +112,7 @@ Widget base(Widget child, BuildContext context) {
   AppState? provider = Inherited.of(context);
   // Size size = MediaQuery.sizeOf(rootNavigatorKey.currentState!.context);
   FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+
   return SizedBox(
     width: view.physicalSize.width,
     height: view.physicalSize.height,
