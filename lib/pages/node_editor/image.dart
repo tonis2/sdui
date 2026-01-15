@@ -1,11 +1,7 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:sdui/models/index.dart';
-
 import 'dart:ui' as ui;
-import '/state.dart';
 import '/components/node_editor/index.dart';
 
 class ImageOutput {
@@ -91,47 +87,6 @@ class ImageNode extends Node {
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class KoboldAPI extends Node {
-  KoboldAPI({
-    super.key,
-    super.color = Colors.lightBlue,
-    super.label = "KoboldAPI",
-    super.size = const Size(300, 300),
-    super.inputs = const [Input(label: "Prompt")],
-    super.outputs = const [Output(label: "Image", color: Colors.white)],
-    super.offset,
-  });
-
-  @override
-  Future<dynamic> execute(BuildContext context) async {
-    print("error");
-    return Future.value();
-  }
-
-  void sendToApi(BuildContext context) async {
-    NodeEditorController? editor = NodeControls.of(context);
-    AppState provider = Inherited.of(context)!;
-
-    for (var node in editor!.incomingNodes<ImagePrompt>(this, 0)) {
-      ImagePrompt prompt = await node.execute(context);
-      provider.createPromptRequest(prompt);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    ThemeData theme = Theme.of(context);
-    return Column(
-      children: [
-        TextButton(
-          onPressed: () => sendToApi(context),
-          child: Text("Send to API", style: theme.textTheme.bodyLarge),
         ),
       ],
     );

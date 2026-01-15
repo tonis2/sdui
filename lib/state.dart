@@ -1,8 +1,8 @@
+import 'dart:async';
+
 import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter/material.dart';
-import '/services/api.dart';
 import '/components/index.dart';
-export '/services/api.dart';
 import '/models/index.dart';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -31,25 +31,27 @@ class Inherited extends InheritedNotifier<AppState> {
   bool updateShouldNotify(InheritedNotifier<AppState> oldWidget) => true;
 }
 
-Future<AppState> createState({required KoboldApi api}) async {
+Future<AppState> createState() async {
   Hive.registerAdapter(ImageAdapter());
 
   // Open settings box to track encryption status
   final settings = await Hive.openBox('settings');
 
-  return AppState(api: api, settings: settings);
+  return AppState(settings: settings);
 }
 
 class AppState extends ChangeNotifier {
-  AppState({required this.api, required this.settings});
+  AppState({required this.settings});
 
   CanvasController painterController = CanvasController(paintColor: Colors.white);
-  ImagePrompt imagePrompt = ImagePrompt(prompt: "", negativePrompt: "", seed: 10);
-  KoboldApi api;
+
   Box settings;
   LazyBox<BackgroundImage>? images;
   List<QueueItem> promptQueue = [];
-  int imagesOnPage = 15;
+
+  void update() {
+    notifyListeners();
+  }
 
   void loadData(BuildContext context) {
     ThemeData theme = Theme.of(context);
@@ -157,22 +159,9 @@ class AppState extends ChangeNotifier {
           // Promise finished
           lastPrompt.endTime = DateTime.now();
           lastPrompt.active = false;
+          lastPrompt.response.complete(response);
 
-          if (response.images.isNotEmpty) {
-            // painterController.setBackground(newImage);
-            images?.add(
-              BackgroundImage(
-                width: lastPrompt.prompt.width,
-                height: lastPrompt.prompt.height,
-                prompt: lastPrompt.prompt.prompt,
-                data: response.images.first,
-                name: response.info,
-              ),
-            );
-            notifyListeners();
-          } else {
-            debugPrint("Image processing failed");
-          }
+          notifyListeners();
 
           var unprocessedPrompts = promptQueue.where((item) => item.endTime == null);
           if (unprocessedPrompts.isNotEmpty) {
@@ -184,13 +173,7 @@ class AppState extends ChangeNotifier {
         });
   }
 
-  void clearImages() {
-    painterController.clear();
-    imagePrompt.clearImages();
-    notifyListeners();
-  }
-
-  void createPromptRequest(ImagePrompt prompt) async {
+  Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<PromptResponse> request) async {
     // if (painterController.points.isNotEmpty) {
     //   prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
 
@@ -202,32 +185,13 @@ class AppState extends ChangeNotifier {
     //   // );
     // }
 
-    var queue = QueueItem(
-      prompt:
-          ImagePrompt(
-              prompt: prompt.prompt,
-              negativePrompt: prompt.negativePrompt,
-              maskInvert: prompt.maskInvert,
-              mask: prompt.mask,
-              width: prompt.width,
-              height: prompt.height,
-              guidance: prompt.guidance,
-              noiseStrenght: prompt.noiseStrenght,
-              sampler: prompt.sampler,
-              seed: prompt.seed,
-              steps: prompt.steps,
-            )
-            ..initImages = prompt.initImages
-            ..extraImages = prompt.extraImages,
-      image: prompt.extraImages.firstOrNull,
-      promptRequest: api.postImageToImage(prompt),
-    );
+    var completer = Completer<PromptResponse>();
+    var queue = QueueItem(response: completer, image: prompt.extraImages.firstOrNull, promptRequest: request);
 
     promptQueue.add(queue);
     _processPrompt(queue);
-
-    clearImages();
-
     notifyListeners();
+
+    return await completer.future;
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sdui/services/pwa_install.dart';
+import 'package:sdui/services/pwa/pwa_install.dart';
 import '/state.dart';
 import '/config.dart';
 import 'package:go_router/go_router.dart';

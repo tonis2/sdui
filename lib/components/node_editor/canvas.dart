@@ -174,7 +174,7 @@ class NodeEditorController extends ChangeNotifier {
     return nodes;
   }
 
-  List<Node> incomingNodes<T>(Node node, int index) {
+  List<Node> incomingNodes(Node node, int index) {
     List<Node> nodes = [];
     for (var conn in connections) {
       if (conn.endNode?.uuid == node.uuid && conn.endIndex == index) {

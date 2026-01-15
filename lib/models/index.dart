@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:hive_ce/hive.dart';
@@ -12,6 +13,7 @@ class ImagePrompt {
   int clipSkip;
   int frames;
   double noiseStrenght;
+  String scheduler;
   String sampler;
   Uint8List? mask;
   List<Uint8List> initImages = [];
@@ -28,6 +30,7 @@ class ImagePrompt {
     this.width = 512,
     this.height = 512,
     this.frames = 0,
+    this.scheduler = "default",
     this.mask,
     this.seed = -1,
     this.clipSkip = 0,
@@ -47,6 +50,7 @@ class ImagePrompt {
       seed: json["seed"],
       clipSkip: json["clip_skip"],
       sampler: json["sampler_name"],
+      scheduler: json["scheduler"],
       noiseStrenght: json["denoising_strength"],
       mask: json["mask"],
       frames: json["frames"],
@@ -64,6 +68,7 @@ class ImagePrompt {
       "seed": seed,
       "clip_skip": clipSkip,
       "sampler_name": sampler,
+      "scheduler": scheduler,
       "denoising_strength": noiseStrenght,
       "mask": mask != null ? base64.encode(mask!) : null,
       "init_images": List.from(initImages.map<String>((image) => base64.encode(image))),
@@ -166,12 +171,12 @@ class ImageAdapter extends TypeAdapter<BackgroundImage> {
 
 @immutable
 class QueueItem {
-  final ImagePrompt prompt;
   final Future<PromptResponse> promptRequest;
   DateTime? endTime;
   DateTime? startTime;
   Uint8List? image;
   bool active;
+  Completer response;
 
-  QueueItem({required this.prompt, this.endTime, required this.promptRequest, this.image, this.active = false});
+  QueueItem({this.endTime, required this.promptRequest, required this.response, this.image, this.active = false});
 }

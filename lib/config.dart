@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 const supportedLanguages = ['en', 'de'];
 
+const imagesOnPage = 15;
+
 class AppRoutes {
   static const home = '/';
   static const gallery = '/gallery';
@@ -61,18 +63,11 @@ ThemeData appThemeData = ThemeData(
   scrollbarTheme: ScrollbarThemeData(thumbVisibility: WidgetStateProperty.all<bool>(true)),
   dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
   inputDecorationTheme: InputDecorationTheme(
-    border: UnderlineInputBorder(
-      borderRadius: BorderRadius.zero,
-      borderSide: const BorderSide(color: Color(0xFFCCC6C0)),
-    ),
-    enabledBorder: UnderlineInputBorder(
-      borderRadius: BorderRadius.zero,
-      borderSide: const BorderSide(color: Color(0xFFCCC6C0)),
-    ),
-    focusedBorder: UnderlineInputBorder(
-      borderRadius: BorderRadius.zero,
-      borderSide: const BorderSide(color: Color(0xFF777878), width: 2),
-    ),
+    labelStyle: TextStyle(fontSize: 16, color: _AppColors.black),
+    fillColor: Colors.white,
+    border: UnderlineInputBorder(borderRadius: BorderRadius.zero),
+    enabledBorder: UnderlineInputBorder(borderRadius: BorderRadius.zero),
+    focusedBorder: UnderlineInputBorder(borderRadius: BorderRadius.zero),
     errorBorder: UnderlineInputBorder(
       borderRadius: BorderRadius.zero,
       borderSide: const BorderSide(color: Colors.red),

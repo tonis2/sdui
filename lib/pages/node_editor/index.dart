@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '/components/index.dart';
 import 'form.dart';
 import '/state.dart';
-import 'nodes.dart';
+import 'image.dart';
+import 'kobold_node.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -25,8 +26,8 @@ class _State extends State<NodeEditor> {
     controller.addNodes([
       ImageNode(offset: Offset(200, 300)),
       ImageNode(offset: Offset(200, 850)),
-      PromptConfig(offset: Offset(700, 300)),
-      KoboldAPI(offset: Offset(1300, 300)),
+      PromptNode(offset: Offset(700, 300)),
+      KoboldNode(offset: Offset(1300, 300)),
     ]);
     super.initState();
   }
