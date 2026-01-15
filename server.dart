@@ -61,6 +61,11 @@ Future<void> handleRequest(HttpRequest request, String buildDir) async {
           request.response.headers.add('Cache-Control', 'no-cache');
         }
 
+        // Service worker requires special header
+        if (path.contains('service_worker') || path.endsWith('sw.js')) {
+          request.response.headers.add('Service-Worker-Allowed', '/');
+        }
+
         // Enable CORS for development
         request.response.headers.add('Access-Control-Allow-Origin', '*');
         request.response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:localstorage/localstorage.dart';
 import 'package:sdui/pages/node_editor/index.dart';
+import 'package:sdui/services/pwa_install.dart';
 import 'menu.dart';
 import 'dart:ui';
 import '/state.dart';
@@ -30,8 +31,9 @@ var rootNavigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initLocalStorage();
-  //usePathUrlStrategy();
-  // web.window.document.querySelector(".loader")?.remove();
+
+  // Initialize PWA install service for web
+  PwaInstallService().init();
 
   KoboldApi api = KoboldApi(headers: {}, baseUrl: "http://localhost:5001");
   AppState state = await createState(api: api);

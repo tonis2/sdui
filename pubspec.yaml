@@ -47,6 +47,7 @@ dependencies:
   uuid: ^4.5.2
   gif_view: ^1.0.3
   crypto: ^3.0.6
+  web: ^1.1.0
 
   vector_math: any
 dev_dependencies:

@@ -98,7 +98,8 @@ class ImageNode extends Node {
 }
 
 class KoboldAPI extends Node {
-  KoboldAPI({super.key, 
+  KoboldAPI({
+    super.key,
     super.color = Colors.lightBlue,
     super.label = "KoboldAPI",
     super.size = const Size(300, 300),
