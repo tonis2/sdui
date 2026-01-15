@@ -177,7 +177,7 @@ Validator defaultValidator = (value) {
 class FormNode extends Node {
   FormNode({
     super.color = Colors.orangeAccent,
-    super.label = "Form config",
+    super.label = "Default form",
     super.size = const Size(500, 500),
     super.inputs = const [],
     super.outputs = const [],
@@ -189,9 +189,31 @@ class FormNode extends Node {
   final List<FormInput> formInputs;
   final formKey = GlobalKey<FormState>();
 
+  factory FormNode.fromJson(Map<String, dynamic> json) {
+    final data = Node.fromJson(json);
+    final formInputs = (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [];
+
+    return FormNode(
+      label: data.label,
+      offset: data.offset,
+      size: data.size,
+      color: data.color,
+      inputs: data.inputs,
+      outputs: data.outputs,
+      formInputs: formInputs,
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+    json["formInputs"] = formInputs.map((i) => i.toJson()).toList();
+    return json;
+  }
+
   @override
   Future<void> execute(BuildContext context) async {
-    throw Exception("Prompt form execution failed");
+    throw Exception("Form execution failed");
   }
 
   @override

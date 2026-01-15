@@ -3,6 +3,43 @@ import '/models/index.dart';
 import '/components/node_editor/index.dart';
 import 'image.dart';
 
+List<FormInput> formInputs = [
+  FormInput(
+    label: "Prompt",
+    type: FormInputType.textArea,
+    width: 450,
+    height: 100,
+    minLines: 4,
+    maxLines: 10,
+    validator: defaultValidator,
+  ),
+  FormInput(label: "Negative prompt", type: FormInputType.textArea, width: 450, height: 100, minLines: 4, maxLines: 10),
+  FormInput(
+    width: 221,
+    height: 60,
+    label: "Sampler",
+    type: FormInputType.dropdown,
+    defaultValue: "Euler",
+    options: ["Euler", "Euler a", "Heun", "DPM2", "DPM++2M", "DDIM", "LCM"],
+  ),
+  FormInput(
+    width: 221,
+    height: 60,
+    label: "Scheduler",
+    type: FormInputType.dropdown,
+    defaultValue: "default",
+    options: ["default", "discrete", "karras", "exponential", "ays", "gits", "sgm_uniform", "simple", "smoothstep"],
+  ),
+  FormInput(label: "Width", type: FormInputType.range, defaultValue: "1024", width: 220),
+  FormInput(label: "Height", type: FormInputType.range, defaultValue: "1024", width: 220),
+  FormInput(label: "Seed", type: FormInputType.int, defaultValue: "-1"),
+  FormInput(label: "Steps", type: FormInputType.int, defaultValue: "8"),
+  FormInput(label: "Guidance", type: FormInputType.double, defaultValue: "1"),
+  FormInput(label: "Denoise", type: FormInputType.double, defaultValue: "0.3"),
+  FormInput(label: "Frames", type: FormInputType.int, defaultValue: "0"),
+  FormInput(label: "Clip skip", type: FormInputType.int, defaultValue: "0"),
+];
+
 class PromptNode extends FormNode {
   PromptNode({
     super.color = Colors.orangeAccent,
@@ -15,61 +52,7 @@ class PromptNode extends FormNode {
     super.outputs = const [Output(label: "Prompt", color: Colors.lightGreen)],
     super.offset,
     super.key,
-  }) : super(
-         formInputs: [
-           FormInput(
-             label: "Prompt",
-             type: FormInputType.textArea,
-             width: 450,
-             height: 100,
-             minLines: 4,
-             maxLines: 10,
-             validator: defaultValidator,
-           ),
-           FormInput(
-             label: "Negative prompt",
-             type: FormInputType.textArea,
-             width: 450,
-             height: 100,
-             minLines: 4,
-             maxLines: 10,
-           ),
-           FormInput(
-             width: 221,
-             height: 60,
-             label: "Sampler",
-             type: FormInputType.dropdown,
-             defaultValue: "Euler",
-             options: ["Euler", "Euler a", "Heun", "DPM2", "DPM++2M", "DDIM", "LCM"],
-           ),
-           FormInput(
-             width: 221,
-             height: 60,
-             label: "Scheduler",
-             type: FormInputType.dropdown,
-             defaultValue: "default",
-             options: [
-               "default",
-               "discrete",
-               "karras",
-               "exponential",
-               "ays",
-               "gits",
-               "sgm_uniform",
-               "simple",
-               "smoothstep",
-             ],
-           ),
-           FormInput(label: "Width", type: FormInputType.range, defaultValue: "1024", width: 220),
-           FormInput(label: "Height", type: FormInputType.range, defaultValue: "1024", width: 220),
-           FormInput(label: "Seed", type: FormInputType.int, defaultValue: "-1"),
-           FormInput(label: "Steps", type: FormInputType.int, defaultValue: "8"),
-           FormInput(label: "Guidance", type: FormInputType.double, defaultValue: "1"),
-           FormInput(label: "Denoise", type: FormInputType.double, defaultValue: "0.3"),
-           FormInput(label: "Frames", type: FormInputType.int, defaultValue: "0"),
-           FormInput(label: "Clip skip", type: FormInputType.int, defaultValue: "0"),
-         ],
-       );
+  }) : super(formInputs: formInputs);
 
   @override
   Future<ImagePrompt> execute(BuildContext context) async {
