@@ -5,8 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:ui' as ui;
 import '/components/node_editor/index.dart';
 
-class Folder extends Node {
-  Folder({
+class FolderNode extends Node {
+  FolderNode({
     super.color = Colors.lightGreen,
     super.label = "Folder",
     super.size = const Size(400, 400),
@@ -17,10 +17,10 @@ class Folder extends Node {
     super.key,
   });
 
-  factory Folder.fromJson(Map<String, dynamic> json) {
+  factory FolderNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
 
-    return Folder(
+    return FolderNode(
       label: data.label,
       offset: data.offset,
       size: data.size,

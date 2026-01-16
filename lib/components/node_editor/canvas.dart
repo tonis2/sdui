@@ -3,6 +3,19 @@ import 'dart:collection';
 import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 
+class ContextMenuItem {
+  String name;
+  String value;
+  IconData icon;
+  int size = 20;
+  ContextMenuItem({required this.name, required this.value, required this.icon});
+}
+
+List<ContextMenuItem> nodeMenuItems = [
+  ContextMenuItem(name: "Delete", value: "delete", icon: Icons.delete),
+  ContextMenuItem(name: "Disconnect connections", value: "disconnect", icon: Icons.clear),
+];
+
 class _LinePainter extends CustomPainter {
   final NodeEditorController controller;
 
@@ -90,10 +103,6 @@ abstract class Node extends StatelessWidget {
   final String uuid;
   final Size size;
   Offset offset;
-
-  Offset calcOffset(Offset offset) {
-    return offset - Offset(size.width / 2, size.height / 2);
-  }
 
   Node({
     this.id,
@@ -252,7 +261,7 @@ class NodeEditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Clear all nodes and connections
+  // Clear all nodes and connections
   void clear() {
     nodes.clear();
     connections.clear();
@@ -357,6 +366,19 @@ class NodeEditorController extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  /// Remove a node and all its connections
+  void removeNode(String uuid) {
+    nodes.remove(uuid);
+    connections.removeWhere((conn) => conn.startNode.uuid == uuid || conn.endNode?.uuid == uuid);
+    notifyListeners();
+  }
+
+  /// Disconnect all connections from a node
+  void disconnectNode(String uuid) {
+    connections.removeWhere((conn) => conn.startNode.uuid == uuid || conn.endNode?.uuid == uuid);
+    notifyListeners();
+  }
 }
 
 double headerOffset = 50;
@@ -388,43 +410,85 @@ class _State extends State<NodeCanvas> {
     setState(() {});
   }
 
+  void _showNodeContextMenu(BuildContext context, Offset globalPosition, Node node) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    ThemeData theme = Theme.of(context);
+
+    showMenu<String>(
+      context: context,
+      color: theme.colorScheme.secondary,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 0, 0),
+        Offset.zero & overlay.size,
+      ),
+      items: nodeMenuItems
+          .map(
+            (item) => PopupMenuItem(
+              value: item.value,
+              child: Row(
+                spacing: 8,
+                children: [
+                  Icon(item.icon, size: 20, color: theme.colorScheme.onSurface),
+                  Text(item.name),
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    ).then((value) {
+      switch (value) {
+        case 'delete':
+          widget.controller.removeNode(node.uuid);
+          break;
+        case 'disconnect':
+          widget.controller.disconnectNode(node.uuid);
+          break;
+      }
+    });
+  }
+
   Widget nodeBase(Node node) {
     ThemeData theme = Theme.of(context);
 
-    return Container(
-      width: node.size.width,
-      height: node.size.height + headerOffset + nodeOffset,
-      decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(10)),
-      child: Column(
-        children: [
-          Container(
-            height: headerOffset,
-            width: node.size.width,
-            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-            decoration: BoxDecoration(
-              color: node.color,
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+    return GestureDetector(
+      onSecondaryTapDown: (details) {
+        _showNodeContextMenu(context, details.globalPosition, node);
+      },
+      child: Container(
+        width: node.size.width,
+        height: node.size.height + headerOffset + nodeOffset,
+        decoration: BoxDecoration(color: theme.colorScheme.secondary, borderRadius: BorderRadius.circular(10)),
+        child: Column(
+          children: [
+            Container(
+              height: headerOffset,
+              width: node.size.width,
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              decoration: BoxDecoration(
+                color: node.color,
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+              ),
+              child: Text(node.label, style: theme.textTheme.bodyLarge),
             ),
-            child: Text(node.label, style: theme.textTheme.bodyLarge),
-          ),
-          Row(
-            children: [
-              Container(
-                margin: EdgeInsets.only(top: nodeOffset, right: 5),
-                width: 20,
-                height: node.size.height,
-                child: inputRow(node),
-              ),
-              Expanded(child: node.build(context)),
-              Container(
-                margin: EdgeInsets.only(top: nodeOffset, left: 5),
-                width: 20,
-                height: node.size.height,
-                child: outputRow(node),
-              ),
-            ],
-          ),
-        ],
+            Row(
+              children: [
+                Container(
+                  margin: EdgeInsets.only(top: nodeOffset, right: 5),
+                  width: 20,
+                  height: node.size.height,
+                  child: inputRow(node),
+                ),
+                Expanded(child: node.build(context)),
+                Container(
+                  margin: EdgeInsets.only(top: nodeOffset, left: 5),
+                  width: 20,
+                  height: node.size.height,
+                  child: outputRow(node),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -562,6 +626,8 @@ class _State extends State<NodeCanvas> {
           });
         } else {
           widget.controller.removeActive();
+
+          if (event.buttons == 2) {}
         }
       },
       onPointerHover: (event) {

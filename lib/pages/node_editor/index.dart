@@ -53,6 +53,7 @@ class _State extends State<NodeEditor> {
     controller.registerNodeType((PromptNode).toString(), (json) => PromptNode.fromJson(json));
     controller.registerNodeType((KoboldNode).toString(), (json) => KoboldNode.fromJson(json));
     controller.registerNodeType((FormNode).toString(), (json) => FormNode.fromJson(json));
+    controller.registerNodeType((FormNode).toString(), (json) => FormNode.fromJson(json));
   }
 
   Future<void> saveCanvas() async {
