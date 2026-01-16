@@ -61,15 +61,6 @@ class FolderNode extends FormNode {
     return super.init();
   }
 
-  @override
-  Map<String, dynamic> toJson() {
-    final json = super.toJson();
-    return json;
-  }
-
-  @override
-  Future<void> execute(BuildContext context) async {}
-
   void createFolder(BuildContext context) {
     NodeEditorController? provider = NodeControls.of(context);
     final nameController = TextEditingController();
