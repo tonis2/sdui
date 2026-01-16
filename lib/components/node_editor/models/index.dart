@@ -1,0 +1,179 @@
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+
+/// Represents a connection between two nodes
+class Connection {
+  Offset start;
+  Offset end;
+  Node startNode;
+  int startIndex;
+  Node? endNode;
+  int? endIndex;
+
+  Connection({
+    required this.start,
+    required this.end,
+    required this.startNode,
+    required this.startIndex,
+    this.endIndex,
+    this.endNode,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "startNodeUuid": startNode.uuid,
+      "startIndex": startIndex,
+      "endNodeUuid": endNode?.uuid,
+      "endIndex": endIndex,
+      "start": {"dx": start.dx, "dy": start.dy},
+      "end": {"dx": end.dx, "dy": end.dy},
+    };
+  }
+
+  static Connection? fromJson(Map<String, dynamic> json, Map<String, Node> nodes) {
+    final startNodeUuid = json["startNodeUuid"] as String;
+    final endNodeUuid = json["endNodeUuid"] as String?;
+
+    final startNode = nodes[startNodeUuid];
+    if (startNode == null) return null;
+
+    final endNode = endNodeUuid != null ? nodes[endNodeUuid] : null;
+
+    return Connection(
+      start: Offset((json["start"]["dx"] as num).toDouble(), (json["start"]["dy"] as num).toDouble()),
+      end: Offset((json["end"]["dx"] as num).toDouble(), (json["end"]["dy"] as num).toDouble()),
+      startNode: startNode,
+      startIndex: json["startIndex"] as int,
+      endNode: endNode,
+      endIndex: json["endIndex"] as int?,
+    );
+  }
+}
+
+/// Data class holding common Node properties parsed from JSON
+class NodeData {
+  final String label;
+  final Offset offset;
+  final Size size;
+  final Color color;
+  final List<Input> inputs;
+  final List<Output> outputs;
+  final String? uuid;
+
+  const NodeData({
+    required this.label,
+    required this.offset,
+    required this.size,
+    required this.color,
+    required this.inputs,
+    required this.outputs,
+    this.uuid,
+  });
+}
+
+/// Abstract base class for all node types in the editor
+abstract class Node extends StatelessWidget {
+  final String? id;
+  final String label;
+  final List<Input> inputs;
+  final List<Output> outputs;
+  final Color color;
+  final String uuid;
+  final Size size;
+  Offset offset;
+
+  Node({
+    this.id,
+    required this.label,
+    required this.inputs,
+    required this.outputs,
+    this.offset = const Offset(0, 0),
+    this.color = const Color.fromRGBO(128, 186, 215, 0.5),
+    this.size = const Size(100, 100),
+    String? uuid,
+    super.key,
+  }) : uuid = uuid ?? Uuid().v4();
+
+  Map<String, dynamic> toJson() {
+    return {
+      "type": runtimeType.toString(),
+      "uuid": uuid,
+      "label": label,
+      "offset": {"dx": offset.dx, "dy": offset.dy},
+      "size": {"width": size.width, "height": size.height},
+      "color": color.toARGB32(),
+      "inputs": inputs.map((i) => i.toJson()).toList(),
+      "outputs": outputs.map((o) => o.toJson()).toList(),
+    };
+  }
+
+  /// Helper to parse all common Node properties from JSON
+  static NodeData fromJson(Map<String, dynamic> json) {
+    return NodeData(
+      uuid: json["uuid"] ?? Uuid().v4(),
+      label: json["label"] as String,
+      offset: Offset((json["offset"]["dx"] as num).toDouble(), (json["offset"]["dy"] as num).toDouble()),
+      size: Size((json["size"]["width"] as num).toDouble(), (json["size"]["height"] as num).toDouble()),
+      color: Color(json["color"] as int),
+      inputs: (json["inputs"] as List<dynamic>).map((i) => Input.fromJson(i)).toList(),
+      outputs: (json["outputs"] as List<dynamic>).map((o) => Output.fromJson(o)).toList(),
+    );
+  }
+
+  Future<dynamic> execute(BuildContext context) async => Future.value();
+
+  @override
+  Widget build(BuildContext context) => SizedBox();
+}
+
+/// Base class for node connectors (inputs and outputs)
+abstract class Connector {
+  final String label;
+  final String? key;
+  final Color color;
+  final String uuid = "";
+
+  const Connector({required this.label, this.key, required this.color});
+
+  Map<String, dynamic> toJson() {
+    return {"label": label, "key": key, "color": color.toARGB32()};
+  }
+}
+
+/// Input connector for receiving data into a node
+class Input extends Connector {
+  const Input({required super.label, super.key, super.color = Colors.lightGreen});
+
+  factory Input.fromJson(Map<String, dynamic> json) {
+    return Input(label: json["label"], key: json["key"], color: Color(json["color"] as int));
+  }
+}
+
+/// Output connector for sending data from a node
+class Output extends Connector {
+  const Output({required super.label, super.key, super.color = Colors.blue});
+
+  factory Output.fromJson(Map<String, dynamic> json) {
+    return Output(label: json["label"], key: json["key"], color: Color(json["color"] as int));
+  }
+}
+
+/// Factory function type for creating nodes from JSON
+typedef NodeFactory = Node Function(Map<String, dynamic> json);
+
+/// Metadata for registered node types used in context menu and serialization
+class NodeTypeMetadata {
+  final String typeName;
+  final String displayName;
+  final String description;
+  final IconData icon;
+  final NodeFactory factory;
+
+  NodeTypeMetadata({
+    required this.typeName,
+    required this.displayName,
+    required this.description,
+    required this.icon,
+    required this.factory,
+  });
+}

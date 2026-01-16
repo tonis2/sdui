@@ -6,6 +6,7 @@ import '/state.dart';
 import '/models/index.dart';
 import 'image.dart';
 import 'kobold_node.dart';
+import 'folder.dart';
 import 'package:hive_ce/hive_ce.dart';
 
 class NodeEditor extends StatefulWidget {
@@ -49,11 +50,57 @@ class _State extends State<NodeEditor> {
   }
 
   void _registerNodeTypes() {
-    controller.registerNodeType((ImageNode).toString(), (json) => ImageNode.fromJson(json));
-    controller.registerNodeType((PromptNode).toString(), (json) => PromptNode.fromJson(json));
-    controller.registerNodeType((KoboldNode).toString(), (json) => KoboldNode.fromJson(json));
-    controller.registerNodeType((FormNode).toString(), (json) => FormNode.fromJson(json));
-    controller.registerNodeType((FormNode).toString(), (json) => FormNode.fromJson(json));
+    // Register nodes with metadata for context menu
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (ImageNode).toString(),
+        displayName: 'Image',
+        description: 'Load and display images',
+        icon: Icons.image,
+        factory: (json) => ImageNode.fromJson(json),
+      ),
+    );
+
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (PromptNode).toString(),
+        displayName: 'Prompt Config',
+        description: 'Configure AI prompts',
+        icon: Icons.edit_note,
+        factory: (json) => PromptNode.fromJson(json),
+      ),
+    );
+
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (KoboldNode).toString(),
+        displayName: 'Kobold API',
+        description: 'Connect to Kobold AI API',
+        icon: Icons.smart_toy,
+        factory: (json) => KoboldNode.fromJson(json),
+      ),
+    );
+
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (FormNode).toString(),
+        displayName: 'Form',
+        description: 'Generic form node',
+        icon: Icons.input,
+        factory: (json) => FormNode.fromJson(json),
+      ),
+    );
+
+    // Optionally register FolderNode
+    controller.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'FolderNode',
+        displayName: 'Folder',
+        description: 'Organize files in folders',
+        icon: Icons.folder,
+        factory: (json) => FolderNode.fromJson(json),
+      ),
+    );
   }
 
   Future<void> saveCanvas() async {
