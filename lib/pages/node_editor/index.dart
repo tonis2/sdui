@@ -94,7 +94,11 @@ class _State extends State<NodeEditor> {
 
   Future<void> saveCanvas() async {
     Box<Config> configs = await Hive.openBox<Config>('configs');
-    configs.putAt(0, Config(name: "default", data: jsonEncode(controller.toJson())));
+    if (configs.isNotEmpty) {
+      configs.putAt(0, Config(name: "default", data: jsonEncode(controller.toJson())));
+    } else {
+      configs.add(Config(name: "default", data: jsonEncode(controller.toJson())));
+    }
   }
 
   @override
