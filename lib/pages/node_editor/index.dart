@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '/components/index.dart';
-import 'form.dart';
+import 'nodes/form.dart';
 import '/state.dart';
 import '/models/index.dart';
-import 'image.dart';
-import 'kobold_node.dart';
-import 'folder.dart';
+import 'nodes/image.dart';
+import 'nodes/kobold_node.dart';
+import 'nodes/folder.dart';
 import 'package:hive_ce/hive_ce.dart';
 
 class NodeEditor extends StatefulWidget {
