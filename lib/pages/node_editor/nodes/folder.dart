@@ -45,11 +45,16 @@ class FolderNode extends FormNode {
   }
 
   Future<void> _recreateFolderList(Box<Folder> folders) async {
+    String? defaultValue;
+    if (formInputs.isNotEmpty) {
+      defaultValue = formInputs.first.defaultValue;
+    }
+
     formInputs = [
       FormInput(
         label: "Folders",
         type: FormInputType.dropdown,
-        defaultValue: formInputs.first.defaultValue,
+        defaultValue: defaultValue,
         width: 300,
         height: 80,
         options: folders.values.map((value) => value.name).toList(),
