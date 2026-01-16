@@ -70,6 +70,8 @@ class _NodeCanvasState extends State<NodeCanvas> {
       });
     } else {
       widget.controller.removeActive();
+
+      // Right mouse click happened
       if (event.buttons == 2) {
         _showCanvasContextMenu(event.localPosition, canvasPosition);
       }
@@ -138,7 +140,9 @@ class _NodeCanvasState extends State<NodeCanvas> {
     if (metadata == null) return;
 
     final node = metadata.factory({"label": metadata.displayName});
-    widget.controller.addNode(node, position);
+    node.init().then((_) {
+      widget.controller.addNode(node, position);
+    });
   }
 
   @override

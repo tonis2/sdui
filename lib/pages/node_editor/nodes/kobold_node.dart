@@ -43,7 +43,18 @@ class KoboldNode extends FormNode {
 
   factory KoboldNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
-    final formInputs = (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [];
+    final formInputs =
+        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ??
+        [
+          FormInput(
+            label: "API address",
+            type: FormInputType.text,
+            width: 300,
+            height: 80,
+            defaultValue: "http://localhost:5001",
+            validator: defaultValidator,
+          ),
+        ];
 
     return KoboldNode(
       label: data.label,
@@ -108,8 +119,8 @@ class KoboldNode extends FormNode {
             mainAxisAlignment: .center,
             spacing: 15,
             children: [
-              Icon(Icons.send, color: Colors.black),
-              Text("Send", style: theme.textTheme.bodyMedium),
+              Icon(Icons.send, color: theme.colorScheme.primary),
+              Text("Send", style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary)),
             ],
           ),
         ),

@@ -129,7 +129,10 @@ class FormInput {
                   ),
                 )
                 .toList(),
-            onChanged: (value) => controller.text = value.toString(),
+            onChanged: (value) {
+              defaultValue = value.toString();
+              controller.text = value.toString();
+            },
           ),
         );
     }
@@ -194,7 +197,7 @@ class FormNode extends Node {
     this.formInputs = const [],
   });
 
-  final List<FormInput> formInputs;
+  List<FormInput> formInputs;
   final formKey = GlobalKey<FormState>();
 
   factory FormNode.fromJson(Map<String, dynamic> json) {
@@ -229,9 +232,8 @@ class FormNode extends Node {
   Widget build(BuildContext context) {
     return Form(
       key: formKey,
-      child: SizedBox(
-        width: size.width,
-        height: size.height - 40,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: size.width, maxHeight: size.height),
         child: Wrap(spacing: 5, runSpacing: 8, children: formInputs.map((item) => item.build(context)).toList()),
       ),
     );

@@ -24,11 +24,10 @@ class _State extends State<NodeEditor> {
   void initState() {
     _registerNodeTypes();
 
-    Hive.openBox<Config>('configs').then((box) {
+    Hive.openBox<Config>('configs').then((box) async {
       var configs = box.values.where((item) => item.name == "default");
       if (configs.isNotEmpty) {
-        var config = configs.first;
-        controller.fromJson(jsonDecode(config.data));
+        await controller.fromJson(jsonDecode(configs.first.data));
       } else {
         controller.addNodes([
           ImageNode(offset: Offset(200, 300)),
@@ -41,10 +40,10 @@ class _State extends State<NodeEditor> {
       setState(() {});
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppState provider = Inherited.of(context)!;
-      provider.loadData(context);
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   AppState provider = Inherited.of(context)!;
+    //   provider.loadData(context);
+    // });
 
     super.initState();
   }
@@ -94,10 +93,8 @@ class _State extends State<NodeEditor> {
   }
 
   Future<void> saveCanvas() async {
-    final json = controller.toJson();
     Box<Config> configs = await Hive.openBox<Config>('configs');
-    configs.putAt(0, Config(name: "default", data: jsonEncode(json)));
-    print("Canvas JSON saved:");
+    configs.putAt(0, Config(name: "default", data: jsonEncode(controller.toJson())));
   }
 
   @override

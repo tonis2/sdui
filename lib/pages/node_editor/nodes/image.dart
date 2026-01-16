@@ -63,7 +63,7 @@ class ImageNode extends Node {
       PlatformFile file = result.files.first;
       image = await decodeImageFromList(file.bytes!);
       data = file.bytes!;
-      provider?.requestUpdate(uuid);
+      provider?.requestUpdate();
     } else {
       print("canceled");
       // User canceled the picker
@@ -103,7 +103,7 @@ class ImageNode extends Node {
                       onTap: () {
                         image = null;
                         data = null;
-                        provider?.requestUpdate(uuid);
+                        provider?.requestUpdate();
                       },
                     ),
                   ),

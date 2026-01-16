@@ -45,36 +45,34 @@ class _State extends State<Menu> {
     AppState provider = Inherited.of(context)!;
     ThemeData theme = Theme.of(context);
 
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsetsGeometry.only(top: 40),
-        child: Column(
-          spacing: 20,
-          children: [
-            ...menuItems.map((item) {
-              final isActive = GoRouterState.of(context).uri.toString() == item.link;
-              return Tooltip(
-                message: item.name,
-                child: InkWell(
-                  child: Icon(item.icon, color: isActive ? Colors.lightGreen : theme.colorScheme.tertiary, size: 25),
-                  onTap: () => context.go(item.link),
-                ),
-              );
-            }),
-            const Spacer(),
-            // Install button at bottom
-            if (_showInstall)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _InstallTile(
-                  onTap: () async {
-                    await _pwaService.promptInstall();
-                  },
-                ),
+    return Padding(
+      padding: EdgeInsetsGeometry.only(top: 40),
+      child: Column(
+        spacing: 20,
+        children: [
+          ...menuItems.map((item) {
+            final isActive = GoRouterState.of(context).uri.toString() == item.link;
+            return Tooltip(
+              message: item.name,
+              child: InkWell(
+                child: Icon(item.icon, color: isActive ? Colors.lightGreen : theme.colorScheme.tertiary, size: 25),
+                onTap: () => context.go(item.link),
               ),
-            const SizedBox(height: 16),
-          ],
-        ),
+            );
+          }),
+          const Spacer(),
+          // Install button at bottom
+          if (_showInstall)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _InstallTile(
+                onTap: () async {
+                  await _pwaService.promptInstall();
+                },
+              ),
+            ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }

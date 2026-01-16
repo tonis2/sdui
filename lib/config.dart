@@ -49,6 +49,7 @@ ThemeData appThemeData = ThemeData(
     selectionColor: Color(0x40777878),
     selectionHandleColor: Color(0xFF777878),
   ),
+  textButtonTheme: TextButtonThemeData(style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.blueAccent))),
   textTheme: const TextTheme(
     displayLarge: TextStyle(fontSize: 22, color: _AppColors.black, fontFamily: "Title"),
     displayMedium: TextStyle(fontSize: 16, color: _AppColors.black, fontFamily: "Title"),

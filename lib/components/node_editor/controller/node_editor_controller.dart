@@ -48,7 +48,7 @@ class NodeEditorController extends ChangeNotifier {
   }
 
   /// Restore canvas state from JSON
-  void fromJson(Map<String, dynamic> json) {
+  Future<void> fromJson(Map<String, dynamic> json) async {
     nodes.clear();
     connections.clear();
 
@@ -63,6 +63,8 @@ class NodeEditorController extends ChangeNotifier {
       }
 
       final node = nodeData.factory(nodeJson);
+
+      await node.init();
       nodes[node.uuid] = node;
     }
 
@@ -86,7 +88,7 @@ class NodeEditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void requestUpdate(String uuid) {
+  void requestUpdate() {
     notifyListeners();
   }
 

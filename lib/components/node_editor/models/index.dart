@@ -130,6 +130,7 @@ abstract class Node extends StatelessWidget {
     );
   }
 
+  Future<void> init() async {}
   Future<dynamic> execute(BuildContext context) async => Future.value();
 
   @override
