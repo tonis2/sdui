@@ -25,28 +25,23 @@ class ImageNode extends Node {
 
   factory ImageNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
-    final imageData = json["imageData"] as String?;
-
-    Uint8List? imageBytes;
-    if (imageData != null) {
-      imageBytes = base64Decode(imageData);
-    }
-
     return ImageNode(
-      label: data.label,
+      label: "Image",
+      size: const Size(400, 400),
+      color: Colors.lightGreen,
+      inputs: const [],
+      outputs: const [
+        Output(label: "Image", color: Colors.yellow),
+        Output(label: "Mask"),
+      ],
       offset: data.offset,
-      size: data.size,
-      color: data.color,
-      inputs: data.inputs,
-      outputs: data.outputs,
-      uuid: json["uuid"] as String?,
-    )..data = imageBytes;
+      uuid: data.uuid,
+    );
   }
 
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
-    json["imageData"] = data != null ? base64Encode(data!) : null;
     return json;
   }
 

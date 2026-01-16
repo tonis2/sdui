@@ -81,16 +81,6 @@ class _State extends State<NodeEditor> {
       ),
     );
 
-    controller.registerNodeType(
-      NodeTypeMetadata(
-        typeName: (FormNode).toString(),
-        displayName: 'Form',
-        description: 'Generic form node',
-        icon: Icons.input,
-        factory: (json) => FormNode.fromJson(json),
-      ),
-    );
-
     // Optionally register FolderNode
     controller.registerNodeType(
       NodeTypeMetadata(

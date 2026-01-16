@@ -3,6 +3,17 @@ import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../utils/node_layout.dart';
 
+/// InheritedWidget that provides NodeEditorController to descendants
+class NodeControls extends InheritedNotifier<NodeEditorController> {
+  const NodeControls({required super.child, required super.notifier, super.key});
+
+  static NodeEditorController? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<NodeControls>()?.notifier;
+
+  @override
+  bool updateShouldNotify(InheritedNotifier<NodeEditorController> oldWidget) => true;
+}
+
 /// Controller for managing node editor state
 class NodeEditorController extends ChangeNotifier {
   final Map<String, Node> nodes = HashMap();
@@ -163,6 +174,14 @@ class NodeEditorController extends ChangeNotifier {
     for (var node in items) {
       nodes[node.uuid] = node;
     }
+    notifyListeners();
+  }
+
+  void addNode(Node node, Offset? position) {
+    nodes[node.uuid] = node;
+
+    if (position != null) setNodePosition(position, node);
+
     notifyListeners();
   }
 

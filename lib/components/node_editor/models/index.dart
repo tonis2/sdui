@@ -108,15 +108,25 @@ abstract class Node extends StatelessWidget {
   }
 
   /// Helper to parse all common Node properties from JSON
+  /// Handles partial JSON with sensible defaults for missing fields
   static NodeData fromJson(Map<String, dynamic> json) {
+    final offsetJson = json["offset"];
+    final sizeJson = json["size"];
+    final inputsJson = json["inputs"] as List<dynamic>?;
+    final outputsJson = json["outputs"] as List<dynamic>?;
+
     return NodeData(
-      uuid: json["uuid"] ?? Uuid().v4(),
-      label: json["label"] as String,
-      offset: Offset((json["offset"]["dx"] as num).toDouble(), (json["offset"]["dy"] as num).toDouble()),
-      size: Size((json["size"]["width"] as num).toDouble(), (json["size"]["height"] as num).toDouble()),
-      color: Color(json["color"] as int),
-      inputs: (json["inputs"] as List<dynamic>).map((i) => Input.fromJson(i)).toList(),
-      outputs: (json["outputs"] as List<dynamic>).map((o) => Output.fromJson(o)).toList(),
+      uuid: json["uuid"] as String?,
+      label: json["label"] as String? ?? "Node",
+      offset: offsetJson != null
+          ? Offset((offsetJson["dx"] as num).toDouble(), (offsetJson["dy"] as num).toDouble())
+          : Offset.zero,
+      size: sizeJson != null
+          ? Size((sizeJson["width"] as num).toDouble(), (sizeJson["height"] as num).toDouble())
+          : const Size(100, 100),
+      color: json["color"] != null ? Color(json["color"] as int) : const Color.fromRGBO(128, 186, 215, 0.5),
+      inputs: inputsJson?.map((i) => Input.fromJson(i)).toList() ?? [],
+      outputs: outputsJson?.map((o) => Output.fromJson(o)).toList() ?? [],
     );
   }
 

@@ -58,16 +58,20 @@ class PromptNode extends FormNode {
 
   factory PromptNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
-    final formInputs = (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [];
+    final formInputs =
+        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? defaultFormInputs;
 
     return PromptNode(
-      label: data.label,
+      label: "Prompt config",
+      size: const Size(500, 500),
+      color: Colors.lightGreen,
+      inputs: const [
+        Input(label: "Extra images", color: Colors.yellow),
+        Input(label: "Init images", color: Colors.yellow),
+      ],
+      outputs: const [Output(label: "Prompt", color: Colors.lightGreen)],
       offset: data.offset,
-      size: data.size,
-      color: data.color,
-      inputs: data.inputs,
-      outputs: data.outputs,
-      uuid: json["uuid"] as String?,
+      uuid: data.uuid,
       customFormInputs: formInputs,
     );
   }

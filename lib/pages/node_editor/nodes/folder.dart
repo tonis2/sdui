@@ -1,8 +1,4 @@
-import 'dart:typed_data';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:ui' as ui;
 import '/components/node_editor/index.dart';
 
 class FolderNode extends Node {
@@ -21,12 +17,13 @@ class FolderNode extends Node {
     final data = Node.fromJson(json);
 
     return FolderNode(
-      label: data.label,
+      label: "Folder",
       offset: data.offset,
-      size: data.size,
-      color: data.color,
-      inputs: data.inputs,
-      outputs: data.outputs,
+      size: const Size(400, 400),
+      color: Colors.lightGreen,
+      inputs: const [Input(label: "Result")],
+      outputs: const [],
+      uuid: data.uuid,
     );
   }
 

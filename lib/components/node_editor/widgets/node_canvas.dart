@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import '../controller/node_editor_controller.dart';
 import '../painters/line_painter.dart';
-import 'node_controls.dart';
 import 'node_base_widget.dart';
 import 'context_menus.dart';
 
@@ -13,12 +12,7 @@ class NodeCanvas extends StatefulWidget {
   final Size size;
   final double zoom;
 
-  const NodeCanvas({
-    required this.controller,
-    required this.size,
-    this.zoom = 1.0,
-    super.key,
-  });
+  const NodeCanvas({required this.controller, required this.size, this.zoom = 1.0, super.key});
 
   /// Factory method to build canvas with NodeControls wrapper
   static Widget build(NodeEditorController controller, Size size, {double zoom = 1.0}) {
@@ -106,10 +100,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
     final node = widget.controller.nodes[_draggingNodeId];
 
     if (node != null) {
-      widget.controller.setNodePosition(
-        Offset(node.offset.dx + delta.dx, node.offset.dy + delta.dy),
-        node,
-      );
+      widget.controller.setNodePosition(Offset(node.offset.dx + delta.dx, node.offset.dy + delta.dy), node);
       _lastDragPosition = canvasPosition;
       setState(() {});
     }
@@ -147,8 +138,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
     if (metadata == null) return;
 
     final node = metadata.factory({"label": metadata.displayName});
-    widget.controller.addNodes([node]);
-    widget.controller.setNodePosition(position, node);
+    widget.controller.addNode(node, position);
   }
 
   @override

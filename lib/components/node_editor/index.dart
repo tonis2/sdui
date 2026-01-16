@@ -9,7 +9,6 @@ export 'controller/node_editor_controller.dart';
 
 // Widgets
 export 'widgets/node_canvas.dart';
-export 'widgets/node_controls.dart';
 export 'widgets/node_base_widget.dart';
 export 'widgets/connector_row.dart';
 export 'widgets/context_menus.dart';

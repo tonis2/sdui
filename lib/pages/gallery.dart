@@ -59,7 +59,7 @@ class _State extends State<Gallery> {
       context: context,
       transitionDuration: 200,
       initialIndex: index,
-      children: images!
+      children: images
           .map(
             (img) => InkWell(
               onTap: () {
@@ -173,7 +173,7 @@ class _State extends State<Gallery> {
         maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
         listViewBuilderOptions:
             ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: images!.indexed.map((image) {
+        children: images.indexed.map((image) {
           return InkWell(onTap: () => openGallery(image.$2, image.$1), child: imageView(image.$2));
         }).toList(),
       ),
