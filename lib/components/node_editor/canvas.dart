@@ -68,6 +68,7 @@ class NodeData {
   final Color color;
   final List<Input> inputs;
   final List<Output> outputs;
+  final String? uuid;
 
   const NodeData({
     required this.label,
@@ -76,6 +77,7 @@ class NodeData {
     required this.color,
     required this.inputs,
     required this.outputs,
+    this.uuid,
   });
 }
 
@@ -93,6 +95,18 @@ abstract class Node extends StatelessWidget {
     return offset - Offset(size.width / 2, size.height / 2);
   }
 
+  Node({
+    this.id,
+    required this.label,
+    required this.inputs,
+    required this.outputs,
+    this.offset = const Offset(0, 0),
+    this.color = const Color.fromRGBO(128, 186, 215, 0.5),
+    this.size = const Size(100, 100),
+    String? uuid,
+    super.key,
+  }) : uuid = uuid ?? Uuid().v4();
+
   Map<String, dynamic> toJson() {
     return {
       "type": runtimeType.toString(),
@@ -109,6 +123,7 @@ abstract class Node extends StatelessWidget {
   /// Helper to parse all common Node properties from JSON
   static NodeData fromJson(Map<String, dynamic> json) {
     return NodeData(
+      uuid: json["uuid"],
       label: json["label"] as String,
       offset: Offset((json["offset"]["dx"] as num).toDouble(), (json["offset"]["dy"] as num).toDouble()),
       size: Size((json["size"]["width"] as num).toDouble(), (json["size"]["height"] as num).toDouble()),
@@ -117,18 +132,6 @@ abstract class Node extends StatelessWidget {
       outputs: (json["outputs"] as List<dynamic>).map((o) => Output.fromJson(o)).toList(),
     );
   }
-
-  Node({
-    this.id,
-    required this.label,
-    required this.inputs,
-    required this.outputs,
-    this.offset = const Offset(0, 0),
-    this.color = const Color.fromRGBO(128, 186, 215, 0.5),
-    this.size = const Size(100, 100),
-    String? uuid,
-    super.key,
-  }) : uuid = uuid ?? Uuid().v4();
 
   Future<dynamic> execute(BuildContext context) async => Future.value();
 

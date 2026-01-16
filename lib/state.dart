@@ -7,6 +7,7 @@ import '/models/index.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'dart:collection';
 
 Uint8List generateEncryptionKey(String password) {
   final salt = utf8.encode('sdui_hive_encryption_salt');
@@ -33,9 +34,12 @@ class Inherited extends InheritedNotifier<AppState> {
 
 Future<AppState> createState() async {
   Hive.registerAdapter(ImageAdapter());
+  Hive.registerAdapter(FolderAdapter());
+  Hive.registerAdapter(ConfigAdapter());
 
   // Open settings box to track encryption status
   final settings = await Hive.openBox('settings');
+  // final folders = await Hive.openBox<Folder>('folders');
 
   return AppState(settings: settings);
 }
@@ -43,9 +47,11 @@ Future<AppState> createState() async {
 class AppState extends ChangeNotifier {
   AppState({required this.settings});
 
+  final Map<String, Node> nodes = HashMap();
   CanvasController painterController = CanvasController(paintColor: Colors.white);
 
   Box settings;
+
   LazyBox<BackgroundImage>? images;
   List<QueueItem> promptQueue = [];
 

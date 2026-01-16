@@ -154,6 +154,70 @@ class BackgroundImage extends HiveObject {
   }
 }
 
+@immutable
+class Config extends HiveObject {
+  final String name;
+  final String data;
+  final String date = DateTime.now().toString();
+
+  Config({required this.name, required this.data});
+
+  factory Config.fromJson(dynamic json) {
+    return Config(name: json["name"], data: json["data"]);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {"name": name, "data": data, "date": date};
+  }
+}
+
+@immutable
+class Folder extends HiveObject {
+  final String name;
+  final bool encrypted;
+  final String date = DateTime.now().toString();
+
+  Folder({required this.name, required this.encrypted});
+
+  factory Folder.fromJson(dynamic json) {
+    return Folder(name: json["name"], encrypted: json["encrypted"]);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {"name": name, "encrypted": encrypted, "date": date};
+  }
+}
+
+class ConfigAdapter extends TypeAdapter<Config> {
+  @override
+  final typeId = 2;
+
+  @override
+  Config read(BinaryReader reader) {
+    return Config.fromJson(reader.read());
+  }
+
+  @override
+  void write(BinaryWriter writer, Config obj) {
+    writer.write(obj.toJson());
+  }
+}
+
+class FolderAdapter extends TypeAdapter<Folder> {
+  @override
+  final typeId = 1;
+
+  @override
+  Folder read(BinaryReader reader) {
+    return Folder.fromJson(reader.read());
+  }
+
+  @override
+  void write(BinaryWriter writer, Folder obj) {
+    writer.write(obj.toJson());
+  }
+}
+
 class ImageAdapter extends TypeAdapter<BackgroundImage> {
   @override
   final typeId = 0;

@@ -16,8 +16,8 @@ class Main extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Inherited(notifier: state, child: router(state, activeUrl ?? AppRoutes.home)),
+        textDirection: .ltr,
+        child: Inherited(notifier: state, child: router(state)),
       ),
     );
   }
@@ -105,7 +105,6 @@ Widget queueView(BuildContext context) {
 
 Widget base(Widget child, BuildContext context) {
   AppState? provider = Inherited.of(context);
-  // Size size = MediaQuery.sizeOf(rootNavigatorKey.currentState!.context);
   FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
 
   return SizedBox(
@@ -114,14 +113,14 @@ Widget base(Widget child, BuildContext context) {
     child: Stack(
       children: [
         SizedBox(width: view.physicalSize.width, height: view.physicalSize.height, child: child),
-        SizedBox(width: 400, height: 70, child: Menu()),
+        Positioned(width: 70, height: view.physicalSize.height, child: Menu()),
         if (provider != null && provider.promptQueue.isNotEmpty) queueView(context),
       ],
     ),
   );
 }
 
-Widget router(AppState appState, String startPage) {
+Widget router(AppState appState) {
   return MaterialApp.router(
     debugShowCheckedModeBanner: false,
     title: 'SDUI',

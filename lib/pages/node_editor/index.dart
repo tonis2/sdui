@@ -3,8 +3,10 @@ import 'dart:convert';
 import '/components/index.dart';
 import 'form.dart';
 import '/state.dart';
+import '/models/index.dart';
 import 'image.dart';
 import 'kobold_node.dart';
+import 'package:hive_ce/hive_ce.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -21,43 +23,44 @@ class _State extends State<NodeEditor> {
   void initState() {
     _registerNodeTypes();
 
+    Hive.openBox<Config>('configs').then((box) {
+      var configs = box.values.where((item) => item.name == "default");
+      if (configs.isNotEmpty) {
+        var config = configs.first;
+        controller.fromJson(jsonDecode(config.data));
+      } else {
+        controller.addNodes([
+          ImageNode(offset: Offset(200, 300)),
+          ImageNode(offset: Offset(200, 850)),
+          PromptNode(offset: Offset(700, 300)),
+          KoboldNode(offset: Offset(1300, 300)),
+        ]);
+      }
+
+      setState(() {});
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppState provider = Inherited.of(context)!;
       provider.loadData(context);
     });
 
-    controller.addNodes([
-      ImageNode(offset: Offset(200, 300)),
-      ImageNode(offset: Offset(200, 850)),
-      PromptNode(offset: Offset(700, 300)),
-      KoboldNode(offset: Offset(1300, 300)),
-    ]);
     super.initState();
   }
 
   void _registerNodeTypes() {
-    controller.registerNodeType("ImageNode", (json) => ImageNode.fromJson(json));
-    controller.registerNodeType("PromptNode", (json) => PromptNode.fromJson(json));
-    controller.registerNodeType("KoboldNode", (json) => KoboldNode.fromJson(json));
-    controller.registerNodeType("FormNode", (json) => FormNode.fromJson(json));
+    controller.registerNodeType((ImageNode).toString(), (json) => ImageNode.fromJson(json));
+    controller.registerNodeType((PromptNode).toString(), (json) => PromptNode.fromJson(json));
+    controller.registerNodeType((KoboldNode).toString(), (json) => KoboldNode.fromJson(json));
+    controller.registerNodeType((FormNode).toString(), (json) => FormNode.fromJson(json));
   }
 
   Future<void> saveCanvas() async {
     final json = controller.toJson();
-    final jsonString = jsonEncode(json);
+    Box<Config> configs = await Hive.openBox<Config>('configs');
+    configs.putAt(0, Config(name: "default", data: jsonEncode(json)));
     print("Canvas JSON saved:");
-    print(jsonString);
-    // TODO: Save to file or storage
   }
-
-  Future<void> loadCanvas(String jsonString) async {
-    final json = jsonDecode(jsonString);
-    controller.fromJson(json);
-  }
-
-  //   if (provider?.images == null) {
-  //   provider?.loadData(context, "test");
-  // }
 
   @override
   Widget build(BuildContext context) {
