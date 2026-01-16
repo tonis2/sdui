@@ -136,7 +136,7 @@ class FormInput {
   }
 
   factory FormInput.fromJson(Map<String, dynamic> json) {
-    return FormInput(
+    final input = FormInput(
       label: json["label"],
       type: FormInputType.values.byName(json["type"]),
       min: json["min"] ?? 64,
@@ -148,6 +148,13 @@ class FormInput {
       defaultValue: json["defaultValue"],
       options: (json["options"] as List<dynamic>?)?.cast<String>(),
     );
+
+    // Restore the saved value
+    if (json["value"] != null) {
+      input.controller.text = json["value"] as String;
+    }
+
+    return input;
   }
 
   Map<String, dynamic> toJson() {
@@ -182,6 +189,7 @@ class FormNode extends Node {
     super.inputs = const [],
     super.outputs = const [],
     super.offset,
+    super.uuid,
     super.key,
     this.formInputs = const [],
   });
@@ -200,6 +208,7 @@ class FormNode extends Node {
       color: data.color,
       inputs: data.inputs,
       outputs: data.outputs,
+      uuid: json["uuid"] as String?,
       formInputs: formInputs,
     );
   }

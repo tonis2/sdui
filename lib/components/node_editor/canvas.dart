@@ -85,7 +85,7 @@ abstract class Node extends StatelessWidget {
   final List<Input> inputs;
   final List<Output> outputs;
   final Color color;
-  final String uuid = Uuid().v4();
+  final String uuid;
   final Size size;
   Offset offset;
 
@@ -126,8 +126,9 @@ abstract class Node extends StatelessWidget {
     this.offset = const Offset(0, 0),
     this.color = const Color.fromRGBO(128, 186, 215, 0.5),
     this.size = const Size(100, 100),
+    String? uuid,
     super.key,
-  });
+  }) : uuid = uuid ?? Uuid().v4();
 
   Future<dynamic> execute(BuildContext context) async => Future.value();
 

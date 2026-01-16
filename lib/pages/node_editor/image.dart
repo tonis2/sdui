@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:ui' as ui;
@@ -18,8 +19,36 @@ class ImageNode extends Node {
     super.inputs = const [],
     super.outputs = const [Output(label: "Image", color: Colors.yellow), Output(label: "Mask")],
     super.offset,
+    super.uuid,
     super.key,
   });
+
+  factory ImageNode.fromJson(Map<String, dynamic> json) {
+    final data = Node.fromJson(json);
+    final imageData = json["imageData"] as String?;
+
+    Uint8List? imageBytes;
+    if (imageData != null) {
+      imageBytes = base64Decode(imageData);
+    }
+
+    return ImageNode(
+      label: data.label,
+      offset: data.offset,
+      size: data.size,
+      color: data.color,
+      inputs: data.inputs,
+      outputs: data.outputs,
+      uuid: json["uuid"] as String?,
+    )..data = imageBytes;
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+    json["imageData"] = data != null ? base64Encode(data!) : null;
+    return json;
+  }
 
   ui.Image? image;
   Uint8List? data;

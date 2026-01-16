@@ -3,7 +3,7 @@ import '/models/index.dart';
 import '/components/node_editor/index.dart';
 import 'image.dart';
 
-List<FormInput> formInputs = [
+List<FormInput> defaultFormInputs = [
   FormInput(
     label: "Prompt",
     type: FormInputType.textArea,
@@ -51,8 +51,26 @@ class PromptNode extends FormNode {
     ],
     super.outputs = const [Output(label: "Prompt", color: Colors.lightGreen)],
     super.offset,
+    super.uuid,
     super.key,
-  }) : super(formInputs: formInputs);
+    List<FormInput>? customFormInputs,
+  }) : super(formInputs: customFormInputs ?? defaultFormInputs);
+
+  factory PromptNode.fromJson(Map<String, dynamic> json) {
+    final data = Node.fromJson(json);
+    final formInputs = (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [];
+
+    return PromptNode(
+      label: data.label,
+      offset: data.offset,
+      size: data.size,
+      color: data.color,
+      inputs: data.inputs,
+      outputs: data.outputs,
+      uuid: json["uuid"] as String?,
+      customFormInputs: formInputs,
+    );
+  }
 
   @override
   Future<ImagePrompt> execute(BuildContext context) async {

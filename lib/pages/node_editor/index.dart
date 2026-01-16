@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import '/components/index.dart';
 import 'form.dart';
 import '/state.dart';
@@ -18,6 +19,8 @@ class _State extends State<NodeEditor> {
 
   @override
   void initState() {
+    _registerNodeTypes();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppState provider = Inherited.of(context)!;
       provider.loadData(context);
@@ -32,12 +35,49 @@ class _State extends State<NodeEditor> {
     super.initState();
   }
 
+  void _registerNodeTypes() {
+    controller.registerNodeType("ImageNode", (json) => ImageNode.fromJson(json));
+    controller.registerNodeType("PromptNode", (json) => PromptNode.fromJson(json));
+    controller.registerNodeType("KoboldNode", (json) => KoboldNode.fromJson(json));
+    controller.registerNodeType("FormNode", (json) => FormNode.fromJson(json));
+  }
+
+  Future<void> saveCanvas() async {
+    final json = controller.toJson();
+    final jsonString = jsonEncode(json);
+    print("Canvas JSON saved:");
+    print(jsonString);
+    // TODO: Save to file or storage
+  }
+
+  Future<void> loadCanvas(String jsonString) async {
+    final json = jsonDecode(jsonString);
+    controller.fromJson(json);
+  }
+
   //   if (provider?.images == null) {
   //   provider?.loadData(context, "test");
   // }
 
   @override
   Widget build(BuildContext context) {
-    return NodeCanvas.build(controller, Size(3000, 3000), zoom: 0.5);
+    return Scaffold(
+      body: NodeCanvas.build(controller, Size(3000, 3000), zoom: 0.5),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            heroTag: "load",
+            onPressed: () {
+              // TODO: Load from file or storage
+              print("Load button pressed - implement file picker");
+            },
+            child: Icon(Icons.folder_open),
+          ),
+        ],
+      ),
+    );
   }
 }

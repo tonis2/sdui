@@ -23,19 +23,39 @@ class KoboldNode extends FormNode {
     super.inputs = const [Input(label: "Prompt", color: Colors.lightGreen)],
     super.outputs = const [Output(label: "Image", color: Colors.yellow)],
     super.offset,
+    super.uuid,
     super.key,
+    List<FormInput>? customFormInputs,
   }) : super(
-         formInputs: [
-           FormInput(
-             label: "API address",
-             type: FormInputType.text,
-             width: 300,
-             height: 80,
-             defaultValue: "http://localhost:5001",
-             validator: defaultValidator,
-           ),
-         ],
+         formInputs:
+             customFormInputs ??
+             [
+               FormInput(
+                 label: "API address",
+                 type: FormInputType.text,
+                 width: 300,
+                 height: 80,
+                 defaultValue: "http://localhost:5001",
+                 validator: defaultValidator,
+               ),
+             ],
        );
+
+  factory KoboldNode.fromJson(Map<String, dynamic> json) {
+    final data = Node.fromJson(json);
+    final formInputs = (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [];
+
+    return KoboldNode(
+      label: data.label,
+      offset: data.offset,
+      size: data.size,
+      color: data.color,
+      inputs: data.inputs,
+      outputs: data.outputs,
+      uuid: json["uuid"] as String?,
+      customFormInputs: formInputs,
+    );
+  }
 
   @override
   Future<PromptResponse> execute(BuildContext context) async {
