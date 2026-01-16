@@ -44,9 +44,7 @@ class FolderNode extends FormNode {
     );
   }
 
-  @override
-  Future<void> init() async {
-    Box<Folder> folders = await Hive.openBox('folders');
+  Future<void> _recreateFolderList(Box<Folder> folders) async {
     formInputs = [
       FormInput(
         label: "Folders",
@@ -58,6 +56,12 @@ class FolderNode extends FormNode {
         validator: defaultValidator,
       ),
     ];
+  }
+
+  @override
+  Future<void> init() async {
+    Box<Folder> folders = await Hive.openBox('folders');
+    await _recreateFolderList(folders);
     return super.init();
   }
 
@@ -117,16 +121,7 @@ class FolderNode extends FormNode {
         folders.add(Folder(name: nameController.text, encrypted: false));
       }
 
-      formInputs = [
-        FormInput(
-          label: "Folders",
-          type: FormInputType.dropdown,
-          width: 300,
-          height: 80,
-          options: folders.values.map((value) => value.name).toList(),
-          validator: defaultValidator,
-        ),
-      ];
+      await _recreateFolderList(folders);
 
       provider?.requestUpdate();
     });
