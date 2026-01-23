@@ -51,6 +51,12 @@ class _State extends State<Gallery> {
     setState(() {});
   }
 
+  @override
+  void didUpdateWidget(covariant Gallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    loadImages(activePage);
+  }
+
   void openGallery(BackgroundImage image, int index) {
     ThemeData theme = Theme.of(context);
     Size size = MediaQuery.sizeOf(context);
@@ -62,9 +68,7 @@ class _State extends State<Gallery> {
       children: images
           .map(
             (img) => InkWell(
-              onTap: () {
-                context.pop();
-              },
+              onTap: () => context.pop(),
               child: SizedBox(
                 height: size.height,
                 child: Stack(

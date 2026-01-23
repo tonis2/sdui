@@ -19,7 +19,7 @@ class _AppColors {
 }
 
 ThemeData appThemeData = ThemeData(
-  fontFamily: "Content",
+  fontFamily: "Roboto",
   useMaterial3: true,
   datePickerTheme: const DatePickerThemeData(
     headerBackgroundColor: Color.fromRGBO(204, 198, 192, 1),
@@ -51,9 +51,9 @@ ThemeData appThemeData = ThemeData(
   ),
   textButtonTheme: TextButtonThemeData(style: ButtonStyle(backgroundColor: WidgetStateProperty.all(Colors.blueAccent))),
   textTheme: const TextTheme(
-    displayLarge: TextStyle(fontSize: 22, color: _AppColors.black, fontFamily: "Title"),
-    displayMedium: TextStyle(fontSize: 16, color: _AppColors.black, fontFamily: "Title"),
-    displaySmall: TextStyle(fontSize: 13, color: _AppColors.black, fontFamily: "Title"),
+    displayLarge: TextStyle(fontSize: 22, color: _AppColors.black, fontFamily: "Roboto"),
+    displayMedium: TextStyle(fontSize: 16, color: _AppColors.black, fontFamily: "Roboto"),
+    displaySmall: TextStyle(fontSize: 13, color: _AppColors.black, fontFamily: "Roboto"),
     titleLarge: TextStyle(fontSize: 38, color: _AppColors.black, fontWeight: FontWeight.bold),
     titleMedium: TextStyle(fontSize: 25, color: _AppColors.black, fontWeight: FontWeight.bold),
     titleSmall: TextStyle(fontSize: 19, color: _AppColors.black, fontWeight: FontWeight.bold),
@@ -64,7 +64,7 @@ ThemeData appThemeData = ThemeData(
   scrollbarTheme: ScrollbarThemeData(thumbVisibility: WidgetStateProperty.all<bool>(true)),
   dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
   inputDecorationTheme: InputDecorationTheme(
-    labelStyle: TextStyle(fontSize: 16, color: _AppColors.black),
+    labelStyle: TextStyle(fontSize: 16, color: _AppColors.black, fontFamily: "Roboto"),
     fillColor: Colors.white,
     border: UnderlineInputBorder(borderRadius: BorderRadius.zero),
     enabledBorder: UnderlineInputBorder(borderRadius: BorderRadius.zero),
