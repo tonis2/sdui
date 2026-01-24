@@ -68,20 +68,20 @@ class AppState extends ChangeNotifier {
 
     final bool isEncrypted = settings.get('imagesEncrypted', defaultValue: false);
 
-    Hive.boxExists("images").then((value) {
-      if (value == false) {
-        // Box doesn't exist - ask user if they want encryption
-        _showPasswordDialog(context, theme, isNewBox: true);
-      } else if (isEncrypted) {
-        // Box exists and is encrypted - prompt for password
-        _showPasswordDialog(context, theme, isNewBox: false);
-      } else {
-        // Box exists and is not encrypted
-        Hive.openLazyBox<BackgroundImage>('images').then((response) => images = response).catchError((err) {
-          print(err);
-        });
-      }
-    });
+    // Hive.boxExists("images").then((value) {
+    //   if (value == false) {
+    //     // Box doesn't exist - ask user if they want encryption
+    //     _showPasswordDialog(context, theme, isNewBox: true);
+    //   } else if (isEncrypted) {
+    //     // Box exists and is encrypted - prompt for password
+    //     _showPasswordDialog(context, theme, isNewBox: false);
+    //   } else {
+    //     // Box exists and is not encrypted
+    //     Hive.openLazyBox<BackgroundImage>('images').then((response) => images = response).catchError((err) {
+    //       print(err);
+    //     });
+    //   }
+    // });
   }
 
   void _showPasswordDialog(BuildContext context, ThemeData theme, {required bool isNewBox}) {

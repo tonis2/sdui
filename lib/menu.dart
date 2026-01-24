@@ -13,7 +13,6 @@ class MenuItem {
 
 var menuItems = [
   MenuItem(link: AppRoutes.home, name: "Home", icon: Icons.home),
-  MenuItem(link: AppRoutes.gallery, name: "Gallery", icon: Icons.photo_library),
   MenuItem(link: AppRoutes.folders, name: "Folders", icon: Icons.folder),
 ];
 

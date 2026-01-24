@@ -142,11 +142,21 @@ Widget router(AppState appState) {
           },
         ),
         GoRoute(
-          path: AppRoutes.gallery,
+          path: AppRoutes.folder,
           pageBuilder: (context, state) {
+            String? name = state.pathParameters["name"];
+            if (name == null) {
+              return CustomTransitionPage<void>(
+                key: state.pageKey,
+                child: Text("Folder not found"),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(opacity: animation, child: child),
+              );
+            }
+
             return CustomTransitionPage<void>(
               key: state.pageKey,
-              child: base(Gallery(), context),
+              child: base(Folder(path: name), context),
               transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                   FadeTransition(opacity: animation, child: child),
             );

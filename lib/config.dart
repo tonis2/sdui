@@ -6,8 +6,8 @@ const imagesOnPage = 15;
 
 class AppRoutes {
   static const home = '/';
-  static const gallery = '/gallery';
   static const folders = '/folders';
+  static const folder = '/folder/:name';
 }
 
 class _AppColors {

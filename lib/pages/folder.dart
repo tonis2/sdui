@@ -11,24 +11,25 @@ import 'dart:math';
 
 // import 'package:image/image.dart' as imageLib;
 
-class Gallery extends StatefulWidget {
-  const Gallery({super.key});
+class Folder extends StatefulWidget {
+  final String path;
+  const Folder({super.key, required this.path});
 
   @override
-  State<Gallery> createState() => _State();
+  State<Folder> createState() => _State();
 }
 
-class _State extends State<Gallery> {
+class _State extends State<Folder> {
   List<BackgroundImage> images = [];
   int activePage = 1;
 
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => loadImages(1));
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadContent(1));
     super.initState();
   }
 
-  void loadImages(int page) async {
+  void loadContent(int page) async {
     activePage = page;
     images = [];
 
@@ -52,9 +53,9 @@ class _State extends State<Gallery> {
   }
 
   @override
-  void didUpdateWidget(covariant Gallery oldWidget) {
+  void didUpdateWidget(covariant Folder oldWidget) {
     super.didUpdateWidget(oldWidget);
-    loadImages(activePage);
+    loadContent(activePage);
   }
 
   void openGallery(BackgroundImage image, int index) {
@@ -202,7 +203,7 @@ class _State extends State<Gallery> {
               child: Pagination(
                 activePage: activePage,
                 totalPages: (provider.images!.length / imagesOnPage).ceil(),
-                onSelect: (page) => loadImages(page),
+                onSelect: (page) => loadContent(page),
               ),
             ),
         ],

@@ -1,3 +1,3 @@
-export 'gallery.dart';
+export 'folder.dart';
 export 'node_editor/index.dart';
 export 'folders.dart';
