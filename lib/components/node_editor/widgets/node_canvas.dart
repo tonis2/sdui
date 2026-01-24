@@ -14,6 +14,26 @@ class NodeCanvas extends StatefulWidget {
 
   const NodeCanvas({required this.controller, required this.size, this.zoom = 1.0, super.key});
 
+  static Widget build({
+    required NodeEditorController controller,
+    Size size = const Size(3000, 3000),
+    double zoom = 0.5,
+    List<FloatingActionButton> buttons = const [],
+  }) {
+    return NodeControls(
+      notifier: controller,
+      child: Scaffold(
+        body: NodeCanvas(controller: controller, size: Size(3000, 3000), zoom: 0.5),
+        floatingActionButton: ListenableBuilder(
+          listenable: controller,
+          builder: (ctx, _) {
+            return Column(mainAxisAlignment: MainAxisAlignment.end, spacing: 10, children: buttons);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   State<NodeCanvas> createState() => _NodeCanvasState();
 }

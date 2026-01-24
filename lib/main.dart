@@ -105,9 +105,11 @@ Widget queueView(BuildContext context) {
 
 Widget base(Widget child, BuildContext context) {
   AppState? provider = Inherited.of(context);
+  ThemeData theme = Theme.of(context);
   FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
 
-  return SizedBox(
+  return Container(
+    decoration: BoxDecoration(color: theme.colorScheme.primary),
     width: view.physicalSize.width,
     height: view.physicalSize.height,
     child: Stack(

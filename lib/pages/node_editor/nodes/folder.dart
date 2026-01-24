@@ -126,6 +126,8 @@ class FolderNode extends FormNode {
         provider.folders.add(Folder(name: nameController.text, encrypted: false));
       }
 
+      formInputs.first.defaultValue = nameController.text;
+
       await _recreateFolderList(context);
 
       controller?.requestUpdate();

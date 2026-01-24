@@ -11,6 +11,7 @@ import 'package:file_saver/file_saver.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:file_picker/file_picker.dart';
+import '/state.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -21,19 +22,17 @@ class NodeEditor extends StatefulWidget {
 
 class _State extends State<NodeEditor> {
   bool loading = false;
-  NodeEditorController controller = NodeEditorController();
 
   @override
   void initState() {
-    _registerNodeTypes();
-
     Hive.openBox<Config>('configs').then((box) async {
+      AppState provider = Inherited.of(context)!;
       var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
       var configs = box.values.where((item) => item.name == "default");
       if (configs.isNotEmpty) {
-        await controller.fromJson(jsonDecode(configs.first.data), context);
+        await provider.nodeController.fromJson(jsonDecode(configs.first.data), context);
       } else {
-        await controller.fromJson(jsonDecode(defaultConfig), context);
+        await provider.nodeController.fromJson(jsonDecode(defaultConfig), context);
       }
 
       setState(() {});
@@ -42,53 +41,10 @@ class _State extends State<NodeEditor> {
     super.initState();
   }
 
-  void _registerNodeTypes() {
-    // Register nodes with metadata for context menu
-    controller.registerNodeType(
-      NodeTypeMetadata(
-        typeName: (ImageNode).toString(),
-        displayName: 'Image',
-        description: 'Load and display images',
-        icon: Icons.image,
-        factory: (json) => ImageNode.fromJson(json),
-      ),
-    );
-
-    controller.registerNodeType(
-      NodeTypeMetadata(
-        typeName: (PromptNode).toString(),
-        displayName: 'Prompt Config',
-        description: 'Configure AI prompts',
-        icon: Icons.edit_note,
-        factory: (json) => PromptNode.fromJson(json),
-      ),
-    );
-
-    controller.registerNodeType(
-      NodeTypeMetadata(
-        typeName: (KoboldNode).toString(),
-        displayName: 'Kobold API',
-        description: 'Connect to Kobold AI API',
-        icon: Icons.smart_toy,
-        factory: (json) => KoboldNode.fromJson(json),
-      ),
-    );
-
-    // Optionally register FolderNode
-    controller.registerNodeType(
-      NodeTypeMetadata(
-        typeName: (FolderNode).toString(),
-        displayName: 'Folder',
-        description: 'Organize files in folders',
-        icon: Icons.folder,
-        factory: (json) => FolderNode.fromJson(json),
-      ),
-    );
-  }
-
   Future<void> saveCanvas() async {
+    AppState provider = Inherited.of(context)!;
     Box<Config> configs = await Hive.openBox<Config>('configs');
-    var data = jsonEncode(controller.toJson());
+    var data = jsonEncode(provider.nodeController.toJson());
 
     if (configs.isNotEmpty) {
       configs.putAt(0, Config(name: "default", data: data));
@@ -104,6 +60,7 @@ class _State extends State<NodeEditor> {
   }
 
   Future<void> loadConfig() async {
+    AppState provider = Inherited.of(context)!;
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: .custom,
       dialogTitle: "Pick config file",
@@ -114,7 +71,7 @@ class _State extends State<NodeEditor> {
       try {
         PlatformFile file = result.files.first;
         String data = String.fromCharCodes(file.bytes!);
-        await controller.fromJson(jsonDecode(data), context);
+        await provider.nodeController.fromJson(jsonDecode(data), context);
       } catch (err) {
         print("failed to load config ${err.toString()}");
       }
@@ -126,12 +83,13 @@ class _State extends State<NodeEditor> {
 
   @override
   Widget build(BuildContext context) {
+    AppState provider = Inherited.of(context)!;
     return NodeControls(
-      notifier: controller,
+      notifier: provider.nodeController,
       child: Scaffold(
-        body: NodeCanvas(controller: controller, size: Size(3000, 3000), zoom: 0.5),
+        body: NodeCanvas(controller: provider.nodeController, size: Size(3000, 3000), zoom: 0.5),
         floatingActionButton: ListenableBuilder(
-          listenable: controller,
+          listenable: provider.nodeController,
           builder: (ctx, _) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -139,7 +97,7 @@ class _State extends State<NodeEditor> {
               children: [
                 FloatingActionButton(
                   heroTag: "run",
-                  onPressed: () => controller.executeAllEndpoints(ctx),
+                  onPressed: () => provider.nodeController.executeAllEndpoints(ctx),
                   child: Icon(Icons.play_arrow),
                 ),
                 FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),

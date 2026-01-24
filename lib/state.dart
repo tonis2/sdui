@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter/material.dart';
 import '/components/index.dart';
@@ -8,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'dart:collection';
+import '/pages/node_editor/nodes/index.dart';
 
 Uint8List generateEncryptionKey(String password) {
   final salt = utf8.encode('sdui_hive_encryption_salt');
@@ -44,15 +44,16 @@ Future<AppState> createState() async {
 
 class AppState extends ChangeNotifier {
   AppState() {
+    _registerNodeTypes();
     Hive.openBox<Folder>('folders').then((box) {
       folders = box;
     });
   }
 
-  late Box<Folder> folders;
   CanvasController painterController = CanvasController(paintColor: Colors.white);
+  NodeEditorController nodeController = NodeEditorController();
 
-  // LazyBox<PromptData>? images;
+  late Box<Folder> folders;
   List<QueueItem> promptQueue = [];
   HashMap<String, LazyBox<PromptData>> boxMap = HashMap();
 
@@ -86,6 +87,50 @@ class AppState extends ChangeNotifier {
         .catchError((err) {
           debugPrint(err.toString());
         });
+  }
+
+  void _registerNodeTypes() {
+    // Register nodes with metadata for context menu
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (ImageNode).toString(),
+        displayName: 'Image',
+        description: 'Load and display images',
+        icon: Icons.image,
+        factory: (json) => ImageNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (PromptNode).toString(),
+        displayName: 'Prompt Config',
+        description: 'Configure AI prompts',
+        icon: Icons.edit_note,
+        factory: (json) => PromptNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (KoboldNode).toString(),
+        displayName: 'Kobold API',
+        description: 'Connect to Kobold AI API',
+        icon: Icons.smart_toy,
+        factory: (json) => KoboldNode.fromJson(json),
+      ),
+    );
+
+    // Optionally register FolderNode
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: (FolderNode).toString(),
+        displayName: 'Folder',
+        description: 'Organize files in folders',
+        icon: Icons.folder,
+        factory: (json) => FolderNode.fromJson(json),
+      ),
+    );
   }
 
   Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<PromptResponse> request) async {

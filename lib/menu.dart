@@ -41,7 +41,8 @@ class _State extends State<Menu> {
     AppState provider = Inherited.of(context)!;
     ThemeData theme = Theme.of(context);
 
-    return Padding(
+    return Container(
+      decoration: BoxDecoration(color: theme.colorScheme.secondary.withAlpha(150)),
       padding: EdgeInsetsGeometry.only(top: 40),
       child: Column(
         spacing: 20,

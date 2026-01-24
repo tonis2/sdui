@@ -30,10 +30,14 @@ class _State extends State<Folders> {
 
   void loadFolders(int page) async {
     if (await Hive.boxExists("folders") == false) return;
+    folders = [];
     AppState provider = Inherited.of(context)!;
     activePage = page;
     int startIndex = (page - 1) * itemsOnPage;
-    for (Folder folder in provider.folders.valuesBetween(startKey: startIndex, endKey: startIndex + itemsOnPage)) {
+    for (Folder folder in provider.folders.values.toList().getRange(
+      startIndex,
+      min(startIndex + itemsOnPage, provider.folders.length),
+    )) {
       folder.size = provider.folders.length;
       folders.add(folder);
     }
@@ -57,6 +61,7 @@ class _State extends State<Folders> {
             Text("Name", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
             Text("Size", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
             Text("Encrypted", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
+            Text("Delete", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
             SizedBox(),
           ],
         ),
@@ -77,6 +82,14 @@ class _State extends State<Folders> {
               Text(item.name),
               Text(box?.length.toString() ?? "0"),
               Text(item.encrypted.toString()),
+              IconButton(
+                onPressed: () async {
+                  item.delete();
+                  provider.boxMap.remove(item.name);
+                  loadFolders(activePage);
+                },
+                icon: Icon(Icons.delete, color: theme.colorScheme.tertiary),
+              ),
               IconButton(
                 onPressed: () => context.go("/folder/${item.name}"),
                 icon: Icon(Icons.arrow_forward, color: theme.colorScheme.tertiary),
