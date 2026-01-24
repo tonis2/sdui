@@ -129,6 +129,21 @@ class FolderNode extends FormNode {
   }
 
   @override
+  Future<dynamic> executeImpl(BuildContext context) async {
+    NodeEditorController? editor = NodeControls.of(context);
+
+    // Get incoming nodes and execute them (results will be cached via context.executionContext)
+    final incomingNodes = editor?.incomingNodes(this, 0) ?? [];
+    for (var node in incomingNodes) {
+      final result = await node.execute(context);
+      // TODO: Save result to selected folder
+      debugPrint('FolderNode received result from ${node.label}');
+    }
+
+    return null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     // ThemeData theme = Theme.of(context);
     // NodeEditorController? provider = NodeControls.of(context);

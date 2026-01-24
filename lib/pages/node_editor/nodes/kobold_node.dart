@@ -15,6 +15,15 @@ class KoboldApi extends Server {
       post("/sdapi/v1/txt2img", promp.toJson()).then((json) => PromptResponse.fromJson(json));
 }
 
+FormInput _defaultNode = FormInput(
+  label: "API address",
+  type: FormInputType.text,
+  width: 300,
+  height: 80,
+  defaultValue: "http://localhost:5001",
+  validator: defaultValidator,
+);
+
 class KoboldNode extends FormNode {
   KoboldNode({
     super.color = Colors.orangeAccent,
@@ -26,35 +35,12 @@ class KoboldNode extends FormNode {
     super.uuid,
     super.key,
     List<FormInput>? customFormInputs,
-  }) : super(
-         formInputs:
-             customFormInputs ??
-             [
-               FormInput(
-                 label: "API address",
-                 type: FormInputType.text,
-                 width: 300,
-                 height: 80,
-                 defaultValue: "http://localhost:5001",
-                 validator: defaultValidator,
-               ),
-             ],
-       );
+  }) : super(formInputs: customFormInputs ?? [_defaultNode]);
 
   factory KoboldNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
     final formInputs =
-        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ??
-        [
-          FormInput(
-            label: "API address",
-            type: FormInputType.text,
-            width: 300,
-            height: 80,
-            defaultValue: "http://localhost:5001",
-            validator: defaultValidator,
-          ),
-        ];
+        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [_defaultNode];
 
     return KoboldNode(
       label: data.label,
@@ -69,7 +55,7 @@ class KoboldNode extends FormNode {
   }
 
   @override
-  Future<PromptResponse> execute(BuildContext context) async {
+  Future<PromptResponse> executeImpl(BuildContext context) async {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
@@ -109,22 +95,6 @@ class KoboldNode extends FormNode {
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
-    return Column(
-      spacing: 10,
-      children: [
-        super.build(context),
-        TextButton(
-          onPressed: () => execute(context),
-          child: Row(
-            mainAxisAlignment: .center,
-            spacing: 15,
-            children: [
-              Icon(Icons.send, color: theme.colorScheme.primary),
-              Text("Send", style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary)),
-            ],
-          ),
-        ),
-      ],
-    );
+    return super.build(context);
   }
 }

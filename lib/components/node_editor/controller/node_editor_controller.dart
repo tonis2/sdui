@@ -199,4 +199,47 @@ class NodeEditorController extends ChangeNotifier {
     connections.removeWhere((conn) => conn.startNode.uuid == uuid || conn.endNode?.uuid == uuid);
     notifyListeners();
   }
+
+  /// Find all endpoint nodes (nodes with no outgoing connections)
+  List<Node> getEndpointNodes() {
+    return nodes.values.where((node) {
+      // A node is an endpoint if none of its outputs are connected
+      return !connections.any((conn) => conn.startNode.uuid == node.uuid);
+    }).toList();
+  }
+
+  /// Execute all endpoint nodes with a shared ExecutionContext.
+  /// This ensures upstream nodes are only executed once, even when
+  /// multiple endpoints depend on them.
+  Future<void> executeAllEndpoints(BuildContext context) async {
+    setCurrentExecutionContext(ExecutionContext());
+    try {
+      final endpoints = getEndpointNodes();
+      for (final endpoint in endpoints) {
+        try {
+          await endpoint.execute(context);
+        } catch (e) {
+          debugPrint('Error executing endpoint ${endpoint.label}: $e');
+        }
+      }
+    } finally {
+      setCurrentExecutionContext(null);
+    }
+  }
+
+  /// Execute specific endpoint nodes with a shared ExecutionContext.
+  Future<void> executeEndpoints(BuildContext context, List<Node> endpoints) async {
+    setCurrentExecutionContext(ExecutionContext());
+    try {
+      for (final endpoint in endpoints) {
+        try {
+          await endpoint.execute(context);
+        } catch (e) {
+          debugPrint('Error executing endpoint ${endpoint.label}: $e');
+        }
+      }
+    } finally {
+      setCurrentExecutionContext(null);
+    }
+  }
 }

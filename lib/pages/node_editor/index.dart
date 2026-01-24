@@ -18,6 +18,7 @@ class NodeEditor extends StatefulWidget {
 
 class _State extends State<NodeEditor> {
   bool loading = false;
+  bool executing = false;
   NodeEditorController controller = NodeEditorController();
 
   @override
@@ -101,6 +102,16 @@ class _State extends State<NodeEditor> {
     }
   }
 
+  Future<void> executeAll() async {
+    if (executing) return;
+    setState(() => executing = true);
+    try {
+      await controller.executeAllEndpoints(context);
+    } finally {
+      setState(() => executing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,6 +119,15 @@ class _State extends State<NodeEditor> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          FloatingActionButton(
+            heroTag: "run",
+            onPressed: executing ? null : executeAll,
+            backgroundColor: executing ? Colors.grey : null,
+            child: executing
+                ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Icon(Icons.play_arrow),
+          ),
+          SizedBox(height: 10),
           FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),
           SizedBox(height: 10),
           FloatingActionButton(

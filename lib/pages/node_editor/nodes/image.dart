@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:ui' as ui;
@@ -43,7 +42,7 @@ class ImageNode extends Node {
   Uint8List? data;
 
   @override
-  Future<ImageOutput> execute(BuildContext context) async {
+  Future<ImageOutput> executeImpl(BuildContext context) async {
     if (image == null) throw Exception("Image is empty");
     return ImageOutput(data: data!, size: Size(image!.width.toDouble(), image!.height.toDouble()));
   }
