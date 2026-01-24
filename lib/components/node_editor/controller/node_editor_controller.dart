@@ -212,10 +212,13 @@ class NodeEditorController extends ChangeNotifier {
   /// This ensures upstream nodes are only executed once, even when
   /// multiple endpoints depend on them.
   Future<void> executeAllEndpoints(BuildContext context) async {
+    assert(NodeControls.of(context) != null);
+
     final ctx = ExecutionContext();
     setCurrentExecutionContext(ctx);
     try {
       final endpoints = getEndpointNodes();
+
       for (final endpoint in endpoints) {
         try {
           await endpoint.execute(context);
@@ -230,6 +233,8 @@ class NodeEditorController extends ChangeNotifier {
 
   /// Execute specific endpoint nodes with a shared ExecutionContext.
   Future<void> executeEndpoints(BuildContext context, List<Node> endpoints) async {
+    assert(NodeControls.of(context) != null);
+
     final ctx = ExecutionContext();
     setCurrentExecutionContext(ctx);
     try {

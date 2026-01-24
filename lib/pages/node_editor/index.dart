@@ -97,12 +97,11 @@ class _State extends State<NodeEditor> {
     }
   }
 
-  Future<void> executeAll() async {
-    print("execute");
+  Future<void> executeAll(BuildContext ctx) async {
     if (executing) return;
     setState(() => executing = true);
     try {
-      await controller.executeAllEndpoints(context);
+      await controller.executeAllEndpoints(ctx);
     } finally {
       setState(() => executing = false);
     }
@@ -110,31 +109,40 @@ class _State extends State<NodeEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: NodeCanvas.build(controller, Size(3000, 3000), zoom: 0.5),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: "run",
-            onPressed: executing ? null : executeAll,
-            backgroundColor: executing ? Colors.grey : null,
-            child: executing
-                ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Icon(Icons.play_arrow),
+    return NodeControls(
+      notifier: controller,
+      child: Scaffold(
+        body: NodeCanvas(controller: controller, size: Size(3000, 3000), zoom: 0.5),
+        floatingActionButton: Builder(
+          builder: (ctx) => Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FloatingActionButton(
+                heroTag: "run",
+                onPressed: executing ? null : () => executeAll(ctx),
+                backgroundColor: executing ? Colors.grey : null,
+                child: executing
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Icon(Icons.play_arrow),
+              ),
+              SizedBox(height: 10),
+              FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),
+              SizedBox(height: 10),
+              FloatingActionButton(
+                heroTag: "load",
+                onPressed: () {
+                  // TODO: Load from file or storage
+                  print("Load button pressed - implement file picker");
+                },
+                child: Icon(Icons.folder_open),
+              ),
+            ],
           ),
-          SizedBox(height: 10),
-          FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),
-          SizedBox(height: 10),
-          FloatingActionButton(
-            heroTag: "load",
-            onPressed: () {
-              // TODO: Load from file or storage
-              print("Load button pressed - implement file picker");
-            },
-            child: Icon(Icons.folder_open),
-          ),
-        ],
+        ),
       ),
     );
   }

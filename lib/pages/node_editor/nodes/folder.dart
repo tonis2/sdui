@@ -134,10 +134,12 @@ class FolderNode extends FormNode {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
-    // Get incoming nodes and execute them (results will be cached via context.executionContext)
-    final incomingNodes = editor?.incomingNodes(this, 0) ?? [];
+    List<Node>? incomingNodes = editor?.incomingNodes(this, 0) ?? [];
+
     for (var node in incomingNodes) {
       PromptResponse result = await node.execute(context);
+
+      debugPrint("Saving to folder ${formInputs.first.defaultValue}");
 
       var box = provider.boxMap[formInputs.first.defaultValue];
 
@@ -154,8 +156,6 @@ class FolderNode extends FormNode {
       } else {
         debugPrint("Failed to save to folder");
       }
-      // TODO: Save result to selected folder
-      debugPrint('FolderNode received result from ${node.label}');
     }
 
     return null;

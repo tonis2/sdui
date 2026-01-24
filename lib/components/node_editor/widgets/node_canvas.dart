@@ -14,14 +14,6 @@ class NodeCanvas extends StatefulWidget {
 
   const NodeCanvas({required this.controller, required this.size, this.zoom = 1.0, super.key});
 
-  /// Factory method to build canvas with NodeControls wrapper
-  static Widget build(NodeEditorController controller, Size size, {double zoom = 1.0}) {
-    return NodeControls(
-      notifier: controller,
-      child: NodeCanvas(size: size, controller: controller, zoom: zoom),
-    );
-  }
-
   @override
   State<NodeCanvas> createState() => _NodeCanvasState();
 }

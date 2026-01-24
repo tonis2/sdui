@@ -59,16 +59,10 @@ class KoboldNode extends FormNode {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
-    print("execute kobold");
-
-    if (editor == null) {
-      throw Exception("NodeEditorController not found");
-    }
-
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       KoboldApi api = KoboldApi(headers: {}, baseUrl: formInputs.first.controller.text);
       try {
-        var incomingNodes = editor.incomingNodes(this, 0);
+        var incomingNodes = editor?.incomingNodes(this, 0) ?? [];
         if (incomingNodes.isEmpty) {
           throw Exception("No node connected to Prompt input");
         }
