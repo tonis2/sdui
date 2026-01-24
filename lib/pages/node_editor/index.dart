@@ -7,6 +7,10 @@ import 'nodes/image.dart';
 import 'nodes/kobold_node.dart';
 import 'nodes/folder.dart';
 import 'package:hive_ce/hive_ce.dart';
+import 'package:file_saver/file_saver.dart';
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:file_picker/file_picker.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -24,16 +28,12 @@ class _State extends State<NodeEditor> {
     _registerNodeTypes();
 
     Hive.openBox<Config>('configs').then((box) async {
+      var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
       var configs = box.values.where((item) => item.name == "default");
       if (configs.isNotEmpty) {
         await controller.fromJson(jsonDecode(configs.first.data), context);
       } else {
-        controller.addNodes([
-          ImageNode(offset: Offset(200, 300)),
-          ImageNode(offset: Offset(200, 850)),
-          PromptNode(offset: Offset(700, 300)),
-          KoboldNode(offset: Offset(1300, 300)),
-        ]);
+        await controller.fromJson(jsonDecode(defaultConfig), context);
       }
 
       setState(() {});
@@ -88,10 +88,39 @@ class _State extends State<NodeEditor> {
 
   Future<void> saveCanvas() async {
     Box<Config> configs = await Hive.openBox<Config>('configs');
+    var data = jsonEncode(controller.toJson());
+
     if (configs.isNotEmpty) {
-      configs.putAt(0, Config(name: "default", data: jsonEncode(controller.toJson())));
+      configs.putAt(0, Config(name: "default", data: data));
     } else {
-      configs.add(Config(name: "default", data: jsonEncode(controller.toJson())));
+      configs.add(Config(name: "default", data: data));
+    }
+
+    await FileSaver.instance.saveFile(
+      name: "sdconfig.json",
+      mimeType: MimeType.png,
+      bytes: Uint8List.fromList(data.codeUnits),
+    );
+  }
+
+  Future<void> loadConfig() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: .custom,
+      dialogTitle: "Pick config file",
+      allowedExtensions: ['json'],
+    );
+
+    if (result != null) {
+      try {
+        PlatformFile file = result.files.first;
+        String data = String.fromCharCodes(file.bytes!);
+        await controller.fromJson(jsonDecode(data), context);
+      } catch (err) {
+        print("failed to load config ${err.toString()}");
+      }
+    } else {
+      print("canceled");
+      // User canceled the picker
     }
   }
 
@@ -106,23 +135,15 @@ class _State extends State<NodeEditor> {
           builder: (ctx, _) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.end,
+              spacing: 10,
               children: [
                 FloatingActionButton(
                   heroTag: "run",
                   onPressed: () => controller.executeAllEndpoints(ctx),
                   child: Icon(Icons.play_arrow),
                 ),
-                SizedBox(height: 10),
                 FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),
-                SizedBox(height: 10),
-                FloatingActionButton(
-                  heroTag: "load",
-                  onPressed: () {
-                    // TODO: Load from file or storage
-                    print("Load button pressed - implement file picker");
-                  },
-                  child: Icon(Icons.folder_open),
-                ),
+                FloatingActionButton(heroTag: "load", onPressed: loadConfig, child: Icon(Icons.folder_open)),
               ],
             );
           },

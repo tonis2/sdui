@@ -132,7 +132,10 @@ class FormInput {
                 .map(
                   (item) => DropdownMenuItem(
                     value: item,
-                    child: Text(item, style: theme.textTheme.bodyMedium),
+                    child: SizedBox(
+                      width: width - 64,
+                      child: Text(item, style: theme.textTheme.bodyMedium, overflow: .clip),
+                    ),
                   ),
                 )
                 .toList(),

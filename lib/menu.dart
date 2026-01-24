@@ -36,10 +36,6 @@ class _State extends State<Menu> {
     });
   }
 
-  void open(MenuItem item) {
-    context.go(item.link);
-  }
-
   @override
   Widget build(BuildContext context) {
     AppState provider = Inherited.of(context)!;

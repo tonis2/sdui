@@ -5,6 +5,10 @@ import '/state.dart';
 import '/pages/folder.dart';
 import 'package:hive_ce/hive.dart';
 
+List<FormInput> _defaultNodes = [
+  FormInput(label: "Folders", type: FormInputType.dropdown, width: 300, height: 80, validator: defaultValidator),
+];
+
 class FolderNode extends FormNode {
   FolderNode({
     super.color = Colors.lightGreen,
@@ -20,7 +24,8 @@ class FolderNode extends FormNode {
 
   factory FolderNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
-    final formInputs = (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? [];
+    final formInputs =
+        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? _defaultNodes;
     return FolderNode(
       label: "Folder",
       size: const Size(400, 200),
@@ -35,34 +40,25 @@ class FolderNode extends FormNode {
 
   Future<void> _recreateFolderList(BuildContext context) async {
     AppState provider = Inherited.of(context)!;
-    String? defaultValue;
 
     if (formInputs.isNotEmpty) {
-      defaultValue = formInputs.first.defaultValue;
-      unlockFolder(context, defaultValue!);
+      if (formInputs[0].defaultValue != null) unlockFolder(context, formInputs[0].defaultValue!);
     }
 
-    formInputs = [
-      FormInput(
-        label: "Folders",
-        type: FormInputType.dropdown,
-        defaultValue: defaultValue,
-        suffix: (context) {
-          return Tooltip(
-            message: "Add new folder",
-            child: InkWell(
-              onTap: () => createFolder(context),
-              child: Icon(Icons.add, color: Colors.black, size: 35),
-            ),
-          );
-        },
-        width: 300,
-        height: 80,
-        options: provider.folders.values.map((value) => value.name).toList(),
-        validator: defaultValidator,
-        callback: (value) => unlockFolder(context, value),
-      ),
-    ];
+    formInputs[0]
+      ..callback = (value) {
+        unlockFolder(context, value);
+      }
+      ..options = provider.folders.values.map((value) => value.name).toList()
+      ..suffix = (context) {
+        return Tooltip(
+          message: "Add new folder",
+          child: InkWell(
+            onTap: () => createFolder(context),
+            child: Icon(Icons.add, color: Colors.black, size: 35),
+          ),
+        );
+      };
   }
 
   @override
@@ -170,9 +166,6 @@ class FolderNode extends FormNode {
 
   @override
   Widget build(BuildContext context) {
-    // ThemeData theme = Theme.of(context);
-    // NodeEditorController? provider = NodeControls.of(context);
-
-    return Column(spacing: 10, children: [super.build(context), SizedBox(height: 10)]);
+    return super.build(context);
   }
 }
