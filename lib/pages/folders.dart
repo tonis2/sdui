@@ -20,54 +20,88 @@ class Folders extends StatefulWidget {
 
 class _State extends State<Folders> {
   int activePage = 1;
-  Box<Folder>? folders;
+  List<Folder> folders = [];
+  Box<Folder>? box;
 
   @override
   void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      folders = await Hive.openBox('folders');
-    });
+    loadFolders(1);
     super.initState();
   }
 
-  Widget foldersList() {
-    AppState provider = Inherited.of(context)!;
+  void loadFolders(int page) async {
+    if (await Hive.boxExists("folders") == false) return;
+    activePage = page;
+    int startIndex = (page - 1) * imagesOnPage;
+    box = await Hive.openBox("folders");
+    for (Folder folder in box!.valuesBetween(startKey: startIndex, endKey: startIndex + imagesOnPage)) {
+      folder.size = box!.length;
+      folders.add(folder);
+    }
 
-    return Expanded(
-      child: ResponsiveGridList(
-        horizontalGridSpacing: 16, // Horizontal space between grid items
-        verticalGridSpacing: 16, // Vertical space between grid items
-        horizontalGridMargin: 50, // Horizontal space around the grid
-        verticalGridMargin: 50, // Vertical space around the grid
-        minItemWidth: 150, // The minimum item width (can be smaller, if the layout constraints are smaller)
-        minItemsPerRow: 2, // The minimum items to show in a single row. Takes precedence over minItemWidth
-        maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
-        listViewBuilderOptions:
-            ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: [],
+    setState(() {});
+  }
+
+  Widget foldersList() {
+    ThemeData theme = Theme.of(context);
+
+    return DefaultTextStyle(
+      style: theme.textTheme.bodyMedium!,
+      child: CustomTable(
+        columnWidths: {0: FixedSize(width: 200), 1: FixedSize(width: 80), 2: FixedSize(width: 60)},
+        maxHeight: 600,
+        headerRow: CustomRow(
+          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+          decoration: BoxDecoration(color: theme.colorScheme.secondary),
+          children: [
+            Text("Name", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
+            Text("Size", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
+            Text("Encrypted", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
+            SizedBox(),
+          ],
+        ),
+        children: folders.map((item) {
+          return CustomRow(
+            padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+            decoration: BoxDecoration(color: theme.colorScheme.primary),
+            itemDecoration: BoxDecoration(
+              border: Border.symmetric(
+                vertical: BorderSide(color: theme.colorScheme.shadow),
+                horizontal: BorderSide(color: theme.colorScheme.shadow),
+              ),
+            ),
+            children: [
+              Text(item.name),
+              Text(item.size.toString()),
+              Text(item.encrypted.toString()),
+              IconButton(
+                onPressed: () => context.go("/folder/${item.name}"),
+                icon: Icon(Icons.arrow_forward, color: theme.colorScheme.tertiary),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    AppState provider = Inherited.of(context)!;
     ThemeData theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 60, vertical: 60),
       child: Column(
         children: [
-          if (folders == null || folders!.isEmpty) Text("No folders created", style: theme.textTheme.bodyLarge),
-          if (folders == null || folders!.isNotEmpty) foldersList(),
-
-          if (folders != null && folders!.keys.length > imagesOnPage)
+          if (box == null || folders.isEmpty) Text("No folders created", style: theme.textTheme.bodyLarge),
+          if (box == null || folders.isNotEmpty) foldersList(),
+          if (box != null && box!.length > imagesOnPage)
             Container(
               width: 545,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
                 activePage: activePage,
-                totalPages: (provider.images!.length / imagesOnPage).ceil(),
-                onSelect: (page) => {},
+                totalPages: (box!.length / imagesOnPage).ceil(),
+                onSelect: (page) => loadFolders(page),
               ),
             ),
         ],

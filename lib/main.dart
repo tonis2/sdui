@@ -14,9 +14,9 @@ class Main extends StatelessWidget {
   Main({required this.state, this.activeUrl, super.key});
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: Directionality(
-        textDirection: .ltr,
+    return Directionality(
+      textDirection: .ltr,
+      child: Material(
         child: Inherited(notifier: state, child: router(state)),
       ),
     );
@@ -147,6 +147,17 @@ Widget router(AppState appState) {
             return CustomTransitionPage<void>(
               key: state.pageKey,
               child: base(Gallery(), context),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                  FadeTransition(opacity: animation, child: child),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.folders,
+          pageBuilder: (context, state) {
+            return CustomTransitionPage<void>(
+              key: state.pageKey,
+              child: base(Folders(), context),
               transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                   FadeTransition(opacity: animation, child: child),
             );

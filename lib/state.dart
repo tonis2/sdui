@@ -47,13 +47,14 @@ Future<AppState> createState() async {
 class AppState extends ChangeNotifier {
   AppState({required this.settings});
 
-  final Map<String, Node> nodes = HashMap();
   CanvasController painterController = CanvasController(paintColor: Colors.white);
 
   Box settings;
 
   LazyBox<BackgroundImage>? images;
   List<QueueItem> promptQueue = [];
+
+  HashMap<String, LazyBox<dynamic>> folderMap = HashMap();
 
   void update() {
     notifyListeners();

@@ -7,6 +7,7 @@ const imagesOnPage = 15;
 class AppRoutes {
   static const home = '/';
   static const gallery = '/gallery';
+  static const folders = '/folders';
 }
 
 class _AppColors {
@@ -21,6 +22,7 @@ class _AppColors {
 ThemeData appThemeData = ThemeData(
   fontFamily: "Roboto",
   useMaterial3: true,
+
   datePickerTheme: const DatePickerThemeData(
     headerBackgroundColor: Color.fromRGBO(204, 198, 192, 1),
     backgroundColor: Color.fromRGBO(249, 251, 255, 1),
@@ -60,6 +62,9 @@ ThemeData appThemeData = ThemeData(
     bodyLarge: TextStyle(fontSize: 19, color: _AppColors.black),
     bodyMedium: TextStyle(fontSize: 16, color: _AppColors.black),
     bodySmall: TextStyle(fontSize: 14, color: _AppColors.black),
+    labelLarge: TextStyle(fontSize: 19, color: _AppColors.black),
+    labelMedium: TextStyle(fontSize: 16, color: _AppColors.black),
+    labelSmall: TextStyle(fontSize: 14, color: _AppColors.black),
   ),
   scrollbarTheme: ScrollbarThemeData(thumbVisibility: WidgetStateProperty.all<bool>(true)),
   dialogTheme: const DialogThemeData(backgroundColor: Colors.white),

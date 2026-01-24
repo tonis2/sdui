@@ -175,9 +175,10 @@ class Config extends HiveObject {
 class Folder extends HiveObject {
   final String name;
   final bool encrypted;
+  int size;
   final String date = DateTime.now().toString();
 
-  Folder({required this.name, required this.encrypted});
+  Folder({required this.name, required this.encrypted, this.size = 0});
 
   factory Folder.fromJson(dynamic json) {
     return Folder(name: json["name"], encrypted: json["encrypted"]);
