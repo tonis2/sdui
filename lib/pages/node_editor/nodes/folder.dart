@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/components/node_editor/index.dart';
 import 'package:hive_ce/hive_ce.dart';
 import '/models/index.dart';
+import '/state.dart';
 
 class FolderNode extends FormNode {
   FolderNode({
@@ -31,7 +32,8 @@ class FolderNode extends FormNode {
     );
   }
 
-  Future<void> _recreateFolderList(Box<Folder> folders) async {
+  Future<void> _recreateFolderList(BuildContext context) async {
+    AppState provider = Inherited.of(context)!;
     String? defaultValue;
     if (formInputs.isNotEmpty) {
       defaultValue = formInputs.first.defaultValue;
@@ -53,21 +55,22 @@ class FolderNode extends FormNode {
         },
         width: 300,
         height: 80,
-        options: folders.values.map((value) => value.name).toList(),
+        options: provider.folders.values.map((value) => value.name).toList(),
         validator: defaultValidator,
       ),
     ];
   }
 
   @override
-  Future<void> init() async {
-    Box<Folder> folders = await Hive.openBox('folders');
-    await _recreateFolderList(folders);
-    return super.init();
+  Future<void> init(BuildContext context) async {
+    await _recreateFolderList(context);
+    return super.init(context);
   }
 
   void createFolder(BuildContext context) {
-    NodeEditorController? provider = NodeControls.of(context);
+    NodeEditorController? controller = NodeControls.of(context);
+    AppState provider = Inherited.of(context)!;
+
     final nameController = TextEditingController();
     final passwordController = TextEditingController();
 
@@ -112,30 +115,45 @@ class FolderNode extends FormNode {
       },
     ).then((_) async {
       if (nameController.text.isEmpty && passwordController.text.isEmpty) return;
-
-      Box<Folder> folders = await Hive.openBox('folders');
       if (passwordController.text.isNotEmpty) {
         // Create passworded folder
-        folders.add(Folder(name: nameController.text, encrypted: true));
+        provider.folders.add(Folder(name: nameController.text, encrypted: true));
       } else {
         // Create normal folder
-        folders.add(Folder(name: nameController.text, encrypted: false));
+        provider.folders.add(Folder(name: nameController.text, encrypted: false));
       }
 
-      await _recreateFolderList(folders);
+      await _recreateFolderList(context);
 
-      provider?.requestUpdate();
+      controller?.requestUpdate();
     });
   }
 
   @override
   Future<dynamic> executeImpl(BuildContext context) async {
     NodeEditorController? editor = NodeControls.of(context);
+    AppState provider = Inherited.of(context)!;
 
     // Get incoming nodes and execute them (results will be cached via context.executionContext)
     final incomingNodes = editor?.incomingNodes(this, 0) ?? [];
     for (var node in incomingNodes) {
-      final result = await node.execute(context);
+      PromptResponse result = await node.execute(context);
+
+      var box = provider.boxMap[formInputs.first.defaultValue];
+
+      if (box != null) {
+        box.add(
+          PromptData(
+            width: result.prompt?.width,
+            height: result.prompt?.height,
+            prompt: result.prompt?.prompt,
+            data: result.images.first,
+            name: result.info,
+          ),
+        );
+      } else {
+        debugPrint("Failed to save to folder");
+      }
       // TODO: Save result to selected folder
       debugPrint('FolderNode received result from ${node.label}');
     }

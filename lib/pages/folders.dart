@@ -21,21 +21,20 @@ class Folders extends StatefulWidget {
 class _State extends State<Folders> {
   int activePage = 1;
   List<Folder> folders = [];
-  Box<Folder>? box;
 
   @override
   void initState() {
-    loadFolders(1);
+    WidgetsBinding.instance.addPostFrameCallback((_) => loadFolders(1));
     super.initState();
   }
 
   void loadFolders(int page) async {
     if (await Hive.boxExists("folders") == false) return;
+    AppState provider = Inherited.of(context)!;
     activePage = page;
-    int startIndex = (page - 1) * imagesOnPage;
-    box = await Hive.openBox("folders");
-    for (Folder folder in box!.valuesBetween(startKey: startIndex, endKey: startIndex + imagesOnPage)) {
-      folder.size = box!.length;
+    int startIndex = (page - 1) * itemsOnPage;
+    for (Folder folder in provider.folders.valuesBetween(startKey: startIndex, endKey: startIndex + itemsOnPage)) {
+      folder.size = provider.folders.length;
       folders.add(folder);
     }
 
@@ -44,6 +43,7 @@ class _State extends State<Folders> {
 
   Widget foldersList() {
     ThemeData theme = Theme.of(context);
+    AppState provider = Inherited.of(context)!;
 
     return DefaultTextStyle(
       style: theme.textTheme.bodyMedium!,
@@ -61,6 +61,9 @@ class _State extends State<Folders> {
           ],
         ),
         children: folders.map((item) {
+          // Get folder size
+          LazyBox<PromptData>? box = provider.boxMap[item.name];
+
           return CustomRow(
             padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             decoration: BoxDecoration(color: theme.colorScheme.primary),
@@ -72,7 +75,7 @@ class _State extends State<Folders> {
             ),
             children: [
               Text(item.name),
-              Text(item.size.toString()),
+              Text(box?.length.toString() ?? "0"),
               Text(item.encrypted.toString()),
               IconButton(
                 onPressed: () => context.go("/folder/${item.name}"),
@@ -88,19 +91,20 @@ class _State extends State<Folders> {
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
+    AppState provider = Inherited.of(context)!;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 60, vertical: 60),
       child: Column(
         children: [
-          if (box == null || folders.isEmpty) Text("No folders created", style: theme.textTheme.bodyLarge),
-          if (box == null || folders.isNotEmpty) foldersList(),
-          if (box != null && box!.length > imagesOnPage)
+          if (folders.isEmpty) Text("No folders created", style: theme.textTheme.bodyLarge),
+          if (folders.isNotEmpty) foldersList(),
+          if (provider.folders.length > itemsOnPage)
             Container(
               width: 545,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
                 activePage: activePage,
-                totalPages: (box!.length / imagesOnPage).ceil(),
+                totalPages: (provider.folders.length / itemsOnPage).ceil(),
                 onSelect: (page) => loadFolders(page),
               ),
             ),

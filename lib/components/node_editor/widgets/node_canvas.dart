@@ -140,7 +140,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
     if (metadata == null) return;
 
     final node = metadata.factory({"label": metadata.displayName});
-    node.init().then((_) {
+    node.init(context).then((_) {
       widget.controller.addNode(node, position);
     });
   }

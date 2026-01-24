@@ -35,7 +35,7 @@ class CanvasController extends ChangeNotifier {
   List<DrawingPoint?> points = [];
   Color paintColor;
   double strokeWidth;
-  BackgroundImage? backgroundLayer;
+  PromptData? backgroundLayer;
   CustomPainter? canvas;
 
   CanvasController({this.paintColor = const Color.fromARGB(255, 255, 255, 255), this.strokeWidth = 90.0}) {
@@ -73,7 +73,7 @@ class CanvasController extends ChangeNotifier {
   //   notifyListeners();
   // }
 
-  void setBackground(BackgroundImage image) {
+  void setBackground(PromptData image) {
     backgroundLayer = image;
 
     points.clear();

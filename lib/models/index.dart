@@ -98,8 +98,9 @@ class PromptResponse {
   List<Uint8List> images = [];
   Map<String, dynamic>? parameters;
   String? info;
+  ImagePrompt? prompt;
 
-  PromptResponse({required this.images, this.parameters, this.info});
+  PromptResponse({required this.images, this.parameters, this.info, this.prompt});
 
   factory PromptResponse.fromJson(Map<String, dynamic> json) {
     return PromptResponse(
@@ -111,26 +112,19 @@ class PromptResponse {
 }
 
 @immutable
-class BackgroundImage extends HiveObject {
-  int width;
-  int height;
+class PromptData extends HiveObject {
+  int? width;
+  int? height;
   final Uint8List data;
   final String? mimeType;
   final String? name;
   final String? prompt;
   final String date = DateTime.now().toString();
 
-  BackgroundImage({
-    required this.width,
-    required this.height,
-    required this.data,
-    this.name,
-    this.mimeType,
-    this.prompt,
-  });
+  PromptData({this.width, this.height, required this.data, this.name, this.mimeType, this.prompt});
 
-  factory BackgroundImage.fromJson(dynamic json) {
-    return BackgroundImage(
+  factory PromptData.fromJson(dynamic json) {
+    return PromptData(
       width: json["width"],
       height: json["height"],
       data: json["data"],
@@ -219,17 +213,17 @@ class FolderAdapter extends TypeAdapter<Folder> {
   }
 }
 
-class ImageAdapter extends TypeAdapter<BackgroundImage> {
+class ImageAdapter extends TypeAdapter<PromptData> {
   @override
   final typeId = 0;
 
   @override
-  BackgroundImage read(BinaryReader reader) {
-    return BackgroundImage.fromJson(reader.read());
+  PromptData read(BinaryReader reader) {
+    return PromptData.fromJson(reader.read());
   }
 
   @override
-  void write(BinaryWriter writer, BackgroundImage obj) {
+  void write(BinaryWriter writer, PromptData obj) {
     writer.write(obj.toJson());
   }
 }

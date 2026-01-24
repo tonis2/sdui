@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:sdui/config.dart';
 import '/components/index.dart';
 import '/models/index.dart';
@@ -11,16 +12,16 @@ import 'dart:math';
 
 // import 'package:image/image.dart' as imageLib;
 
-class Folder extends StatefulWidget {
+class FolderView extends StatefulWidget {
   final String path;
-  const Folder({super.key, required this.path});
+  const FolderView({super.key, required this.path});
 
   @override
-  State<Folder> createState() => _State();
+  State<FolderView> createState() => _State();
 }
 
-class _State extends State<Folder> {
-  List<BackgroundImage> images = [];
+class _State extends State<FolderView> {
+  List<PromptData> data = [];
   int activePage = 1;
 
   @override
@@ -30,35 +31,105 @@ class _State extends State<Folder> {
   }
 
   void loadContent(int page) async {
-    activePage = page;
-    images = [];
-
     AppState provider = Inherited.of(context)!;
-    int startIndex = (page - 1) * imagesOnPage;
+    activePage = page;
+    data = [];
 
-    var keys = provider.images?.keys.toList().getRange(
-      startIndex,
-      min(startIndex + imagesOnPage, provider.images?.length ?? 0),
-    );
+    int startIndex = (page - 1) * itemsOnPage;
+
+    LazyBox<PromptData>? box = provider.boxMap[widget.path];
+
+    // Folder not loaded, load it to cache
+    if (box == null && await Hive.boxExists("folders")) {
+      Folder folder = provider.folders.values.firstWhere((item) => item.name == widget.path);
+      if (folder.encrypted) {
+        await _showPasswordDialog(context, widget.path);
+      } else {
+        provider.boxMap[widget.path] = await Hive.openLazyBox<PromptData>(widget.path);
+      }
+    }
+
+    box = provider.boxMap[widget.path];
+    var keys = box?.keys.toList().getRange(startIndex, min(startIndex + itemsOnPage, box.length));
 
     // Load images from keys
     if (keys != null) {
       for (var key in keys) {
-        var image = await provider.images?.get(key);
-        if (image != null) images.add(image);
+        var item = await box?.get(key);
+        if (item != null) data.add(item);
       }
     }
 
     setState(() {});
   }
 
-  @override
-  void didUpdateWidget(covariant Folder oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    loadContent(activePage);
+  Future<void> _showPasswordDialog(BuildContext context, String folder) async {
+    ThemeData theme = Theme.of(context);
+    AppState provider = Inherited.of(context)!;
+    String? password;
+
+    var response = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Enter password to unlock storage", style: theme.textTheme.titleSmall),
+          content: SizedBox(
+            width: 600,
+            height: 200,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 10,
+              children: [
+                TextField(
+                  obscureText: true,
+                  decoration: InputDecoration(label: Text("Password", style: theme.textTheme.bodyMedium)),
+                  onChanged: (value) => password = value,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 25,
+                  children: [
+                    ElevatedButton(
+                      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
+                      onPressed: () => Navigator.pop(context, password),
+                      child: Text("Submit", style: theme.textTheme.bodyMedium),
+                    ),
+                    ElevatedButton(
+                      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
+                      onPressed: () => Navigator.pop(context),
+                      child: Text("Skip", style: theme.textTheme.bodyMedium),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      if (response != null && response.toString().isNotEmpty) {
+        // User provided password
+        provider.boxMap[folder] = await Hive.openLazyBox<PromptData>(
+          folder,
+          encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
+        );
+      }
+    } catch (err) {
+      print(err.toString());
+    }
   }
 
-  void openGallery(BackgroundImage image, int index) {
+  // @override
+  // void didUpdateWidget(covariant Folder oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   loadContent(activePage);
+  // }
+
+  void openGallery(PromptData image, int index) {
     ThemeData theme = Theme.of(context);
     Size size = MediaQuery.sizeOf(context);
 
@@ -66,20 +137,20 @@ class _State extends State<Folder> {
       context: context,
       transitionDuration: 200,
       initialIndex: index,
-      children: images
+      children: data
           .map(
-            (img) => InkWell(
+            (item) => InkWell(
               onTap: () => context.pop(),
               child: SizedBox(
                 height: size.height,
                 child: Stack(
                   children: [
-                    Align(alignment: .center, child: Image.memory(img.data)),
-                    if (img.prompt != null)
+                    Align(alignment: .center, child: Image.memory(item.data)),
+                    if (item.prompt != null)
                       Align(
                         alignment: .bottomCenter,
                         child: SelectableText(
-                          img.prompt!,
+                          item.prompt!,
                           style: theme.textTheme.bodyMedium?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9)),
                         ),
                       ),
@@ -93,12 +164,10 @@ class _State extends State<Folder> {
   }
 
   Widget galleryView() {
-    AppState provider = Inherited.of(context)!;
-
-    Widget imageView(BackgroundImage image) {
+    Widget imageView(PromptData item) {
       return Stack(
         children: [
-          Image.memory(image.data),
+          Image.memory(item.data),
           Positioned(
             right: 5,
             top: 5,
@@ -114,8 +183,8 @@ class _State extends State<Folder> {
                       child: Icon(Icons.delete, color: Colors.white),
                     ),
                     onTap: () {
-                      images.removeWhere((img) => img.key == image.key);
-                      image.delete();
+                      data.removeWhere((img) => img.key == item.key);
+                      item.delete();
                       setState(() {});
                     },
                   ),
@@ -126,9 +195,9 @@ class _State extends State<Folder> {
                     ),
                     onTap: () async {
                       await FileSaver.instance.saveFile(
-                        name: image.name ?? "default",
+                        name: item.name ?? "default",
                         mimeType: MimeType.png,
-                        bytes: image.data,
+                        bytes: item.data,
                       );
                     },
                   ),
@@ -169,16 +238,15 @@ class _State extends State<Folder> {
 
     return Expanded(
       child: ResponsiveGridList(
-        horizontalGridSpacing: 16, // Horizontal space between grid items
-        verticalGridSpacing: 16, // Vertical space between grid items
-        horizontalGridMargin: 50, // Horizontal space around the grid
-        verticalGridMargin: 50, // Vertical space around the grid
-        minItemWidth: 150, // The minimum item width (can be smaller, if the layout constraints are smaller)
-        minItemsPerRow: 2, // The minimum items to show in a single row. Takes precedence over minItemWidth
-        maxItemsPerRow: 5, // The maximum items to show in a single row. Can be useful on large screens
-        listViewBuilderOptions:
-            ListViewBuilderOptions(), // Options that are getting passed to the ListView.builder() function
-        children: images.indexed.map((image) {
+        horizontalGridSpacing: 16,
+        verticalGridSpacing: 16,
+        horizontalGridMargin: 50,
+        verticalGridMargin: 50,
+        minItemWidth: 150,
+        minItemsPerRow: 2,
+        maxItemsPerRow: 5,
+        listViewBuilderOptions: ListViewBuilderOptions(),
+        children: data.indexed.map((image) {
           return InkWell(onTap: () => openGallery(image.$2, image.$1), child: imageView(image.$2));
         }).toList(),
       ),
@@ -189,20 +257,21 @@ class _State extends State<Folder> {
   Widget build(BuildContext context) {
     AppState provider = Inherited.of(context)!;
     ThemeData theme = Theme.of(context);
+    LazyBox<PromptData>? box = provider.boxMap[widget.path];
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
         children: [
-          if (images.isEmpty) Text("Gallery is empty", style: theme.textTheme.bodyLarge),
-          if (images.isNotEmpty) galleryView(),
-
-          if (provider.images != null && provider.images!.length > imagesOnPage)
+          if (data.isEmpty) Text("Folder is empty", style: theme.textTheme.bodyLarge),
+          if (data.isNotEmpty) galleryView(),
+          if (box != null && box.length > itemsOnPage)
             Container(
               width: 545,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
                 activePage: activePage,
-                totalPages: (provider.images!.length / imagesOnPage).ceil(),
+                totalPages: (box.length / itemsOnPage).ceil(),
                 onSelect: (page) => loadContent(page),
               ),
             ),

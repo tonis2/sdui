@@ -59,29 +59,25 @@ class KoboldNode extends FormNode {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
+    print("execute kobold");
+
+    if (editor == null) {
+      throw Exception("NodeEditorController not found");
+    }
+
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       KoboldApi api = KoboldApi(headers: {}, baseUrl: formInputs.first.controller.text);
       try {
-        Node node = editor!.incomingNodes(this, 0).first;
+        var incomingNodes = editor.incomingNodes(this, 0);
+        if (incomingNodes.isEmpty) {
+          throw Exception("No node connected to Prompt input");
+        }
+        Node node = incomingNodes.first;
         ImagePrompt prompt = await node.execute(context);
         var response = await provider.createPromptRequest(prompt, api.postImageToImage(prompt));
 
-        // Save response image to gallery
-        if (response.images.isNotEmpty) {
-          // painterController.setBackground(newImage);
-          provider.images?.add(
-            BackgroundImage(
-              width: prompt.width,
-              height: prompt.height,
-              prompt: prompt.prompt,
-              data: response.images.first,
-              name: response.info,
-            ),
-          );
-        } else {
-          debugPrint("Image processing failed");
-        }
-        print("response received ${response.info}");
+        prompt.clearImages();
+        response.prompt = prompt;
         return response;
       } catch (err) {
         print(err.toString());

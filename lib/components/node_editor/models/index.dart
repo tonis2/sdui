@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+/// Forward declaration for controller type
+typedef ControllerGetter = dynamic Function();
+
 /// Execution context that caches node results during a single execution run.
 /// This prevents nodes from being executed multiple times when multiple
 /// endpoint nodes (e.g., folder nodes) share the same upstream nodes.
@@ -184,7 +187,7 @@ abstract class Node extends StatelessWidget {
     );
   }
 
-  Future<void> init() async {}
+  Future<void> init(BuildContext context) async {}
 
   /// Execute this node with caching support.
   /// Gets the ExecutionContext via the BuildContext extension.

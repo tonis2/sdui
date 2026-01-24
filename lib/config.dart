@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 const supportedLanguages = ['en', 'de'];
 
-const imagesOnPage = 15;
+const itemsOnPage = 15;
 
 class AppRoutes {
   static const home = '/';

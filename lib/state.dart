@@ -38,118 +38,26 @@ Future<AppState> createState() async {
   Hive.registerAdapter(ConfigAdapter());
 
   // Open settings box to track encryption status
-  final settings = await Hive.openBox('settings');
-  // final folders = await Hive.openBox<Folder>('folders');
 
-  return AppState(settings: settings);
+  return AppState();
 }
 
 class AppState extends ChangeNotifier {
-  AppState({required this.settings});
+  AppState() {
+    Hive.openBox<Folder>('folders').then((box) {
+      folders = box;
+    });
+  }
 
+  late Box<Folder> folders;
   CanvasController painterController = CanvasController(paintColor: Colors.white);
 
-  Box settings;
-
-  LazyBox<BackgroundImage>? images;
+  // LazyBox<PromptData>? images;
   List<QueueItem> promptQueue = [];
-
-  HashMap<String, LazyBox<dynamic>> folderMap = HashMap();
+  HashMap<String, LazyBox<PromptData>> boxMap = HashMap();
 
   void update() {
     notifyListeners();
-  }
-
-  void loadData(BuildContext context) {
-    ThemeData theme = Theme.of(context);
-    // Creates / loads hive memory storage.
-
-    if (images != null) return;
-
-    final bool isEncrypted = settings.get('imagesEncrypted', defaultValue: false);
-
-    // Hive.boxExists("images").then((value) {
-    //   if (value == false) {
-    //     // Box doesn't exist - ask user if they want encryption
-    //     _showPasswordDialog(context, theme, isNewBox: true);
-    //   } else if (isEncrypted) {
-    //     // Box exists and is encrypted - prompt for password
-    //     _showPasswordDialog(context, theme, isNewBox: false);
-    //   } else {
-    //     // Box exists and is not encrypted
-    //     Hive.openLazyBox<BackgroundImage>('images').then((response) => images = response).catchError((err) {
-    //       print(err);
-    //     });
-    //   }
-    // });
-  }
-
-  void _showPasswordDialog(BuildContext context, ThemeData theme, {required bool isNewBox}) {
-    String? password;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            isNewBox
-                ? "Storage created first time, do you want to use password for storage?"
-                : "Enter password to unlock storage",
-            style: theme.textTheme.titleSmall,
-          ),
-          content: SizedBox(
-            width: 600,
-            height: 200,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              spacing: 10,
-              children: [
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(label: Text("Password", style: theme.textTheme.bodyMedium)),
-                  onChanged: (value) => password = value,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 25,
-                  children: [
-                    ElevatedButton(
-                      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
-                      onPressed: () => Navigator.pop(context, password),
-                      child: Text("Submit", style: theme.textTheme.bodyMedium),
-                    ),
-                    if (isNewBox)
-                      ElevatedButton(
-                        style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
-                        onPressed: () => Navigator.pop(context),
-                        child: Text("Skip", style: theme.textTheme.bodyMedium),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).then((response) async {
-      try {
-        if (response != null && response.toString().isNotEmpty) {
-          // User provided password
-          images = await Hive.openLazyBox<BackgroundImage>(
-            'images',
-            encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
-          );
-
-          if (isNewBox) settings.put('imagesEncrypted', true);
-        } else if (isNewBox) {
-          // New box without encryption
-          images = await Hive.openLazyBox<BackgroundImage>('images');
-        }
-      } catch (err) {
-        print(err.toString());
-      }
-    });
   }
 
   void _processPrompt(QueueItem item) {

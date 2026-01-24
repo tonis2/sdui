@@ -145,6 +145,7 @@ Widget router(AppState appState) {
           path: AppRoutes.folder,
           pageBuilder: (context, state) {
             String? name = state.pathParameters["name"];
+
             if (name == null) {
               return CustomTransitionPage<void>(
                 key: state.pageKey,
@@ -156,7 +157,7 @@ Widget router(AppState appState) {
 
             return CustomTransitionPage<void>(
               key: state.pageKey,
-              child: base(Folder(path: name), context),
+              child: base(FolderView(path: name), context),
               transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                   FadeTransition(opacity: animation, child: child),
             );

@@ -28,7 +28,7 @@ class _State extends State<NodeEditor> {
     Hive.openBox<Config>('configs').then((box) async {
       var configs = box.values.where((item) => item.name == "default");
       if (configs.isNotEmpty) {
-        await controller.fromJson(jsonDecode(configs.first.data));
+        await controller.fromJson(jsonDecode(configs.first.data), context);
       } else {
         controller.addNodes([
           ImageNode(offset: Offset(200, 300)),
@@ -39,11 +39,6 @@ class _State extends State<NodeEditor> {
       }
 
       setState(() {});
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppState provider = Inherited.of(context)!;
-      provider.loadData(context);
     });
 
     super.initState();
@@ -103,6 +98,7 @@ class _State extends State<NodeEditor> {
   }
 
   Future<void> executeAll() async {
+    print("execute");
     if (executing) return;
     setState(() => executing = true);
     try {

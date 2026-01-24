@@ -48,7 +48,7 @@ class NodeEditorController extends ChangeNotifier {
   }
 
   /// Restore canvas state from JSON
-  Future<void> fromJson(Map<String, dynamic> json) async {
+  Future<void> fromJson(Map<String, dynamic> json, BuildContext context) async {
     nodes.clear();
     connections.clear();
 
@@ -64,7 +64,7 @@ class NodeEditorController extends ChangeNotifier {
 
       final node = nodeData.factory(nodeJson);
 
-      await node.init();
+      await node.init(context);
       nodes[node.uuid] = node;
     }
 
@@ -212,7 +212,8 @@ class NodeEditorController extends ChangeNotifier {
   /// This ensures upstream nodes are only executed once, even when
   /// multiple endpoints depend on them.
   Future<void> executeAllEndpoints(BuildContext context) async {
-    setCurrentExecutionContext(ExecutionContext());
+    final ctx = ExecutionContext();
+    setCurrentExecutionContext(ctx);
     try {
       final endpoints = getEndpointNodes();
       for (final endpoint in endpoints) {
@@ -229,7 +230,8 @@ class NodeEditorController extends ChangeNotifier {
 
   /// Execute specific endpoint nodes with a shared ExecutionContext.
   Future<void> executeEndpoints(BuildContext context, List<Node> endpoints) async {
-    setCurrentExecutionContext(ExecutionContext());
+    final ctx = ExecutionContext();
+    setCurrentExecutionContext(ctx);
     try {
       for (final endpoint in endpoints) {
         try {
