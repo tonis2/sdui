@@ -3,13 +3,15 @@ import '/components/node_editor/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';
-import 'package:hive_ce/hive.dart';
 
 List<FormInput> _defaultNodes = [
   FormInput(label: "Folders", type: FormInputType.dropdown, width: 300, height: 80, validator: defaultValidator),
 ];
 
 class FolderNode extends FormNode {
+  @override
+  String get typeName => 'FolderNode';
+
   FolderNode({
     super.color = Colors.lightGreen,
     super.label = "Folder",
@@ -55,7 +57,7 @@ class FolderNode extends FormNode {
           message: "Add new folder",
           child: InkWell(
             onTap: () => createFolder(context),
-            child: Icon(Icons.add, color: Colors.black, size: 35),
+            child: Text("+", style: TextStyle(fontSize: 35), textAlign: .center),
           ),
         );
       };
@@ -166,8 +168,4 @@ class FolderNode extends FormNode {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return super.build(context);
-  }
 }

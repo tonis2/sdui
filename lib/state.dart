@@ -93,7 +93,7 @@ class AppState extends ChangeNotifier {
     // Register nodes with metadata for context menu
     nodeController.registerNodeType(
       NodeTypeMetadata(
-        typeName: (ImageNode).toString(),
+        typeName: 'ImageNode',
         displayName: 'Image',
         description: 'Load and display images',
         icon: Icons.image,
@@ -103,7 +103,7 @@ class AppState extends ChangeNotifier {
 
     nodeController.registerNodeType(
       NodeTypeMetadata(
-        typeName: (PromptNode).toString(),
+        typeName: 'PromptNode',
         displayName: 'Prompt Config',
         description: 'Configure AI prompts',
         icon: Icons.edit_note,
@@ -113,7 +113,7 @@ class AppState extends ChangeNotifier {
 
     nodeController.registerNodeType(
       NodeTypeMetadata(
-        typeName: (KoboldNode).toString(),
+        typeName: 'KoboldNode',
         displayName: 'Kobold API',
         description: 'Connect to Kobold AI API',
         icon: Icons.smart_toy,
@@ -121,10 +121,9 @@ class AppState extends ChangeNotifier {
       ),
     );
 
-    // Optionally register FolderNode
     nodeController.registerNodeType(
       NodeTypeMetadata(
-        typeName: (FolderNode).toString(),
+        typeName: 'FolderNode',
         displayName: 'Folder',
         description: 'Organize files in folders',
         icon: Icons.folder,

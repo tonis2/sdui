@@ -41,6 +41,9 @@ List<FormInput> defaultFormInputs = [
 ];
 
 class PromptNode extends FormNode {
+  @override
+  String get typeName => 'PromptNode';
+
   PromptNode({
     super.color = Colors.orangeAccent,
     super.label = "Prompt config",

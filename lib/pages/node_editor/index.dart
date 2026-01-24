@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '/components/index.dart';
-import 'nodes/form.dart';
 import '/models/index.dart';
-import 'nodes/image.dart';
-import 'nodes/kobold_node.dart';
-import 'nodes/folder.dart';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:file_saver/file_saver.dart';
 import 'dart:typed_data';
@@ -88,9 +84,8 @@ class _State extends State<NodeEditor> {
       notifier: provider.nodeController,
       child: Scaffold(
         body: NodeCanvas(controller: provider.nodeController, size: Size(3000, 3000), zoom: 0.5),
-        floatingActionButton: ListenableBuilder(
-          listenable: provider.nodeController,
-          builder: (ctx, _) {
+        floatingActionButton: Builder(
+          builder: (ctx) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.end,
               spacing: 10,
@@ -98,7 +93,7 @@ class _State extends State<NodeEditor> {
                 FloatingActionButton(
                   heroTag: "run",
                   onPressed: () => provider.nodeController.executeAllEndpoints(ctx),
-                  child: Icon(Icons.play_arrow),
+                  child: Icon(Icons.arrow_forward),
                 ),
                 FloatingActionButton(heroTag: "save", onPressed: saveCanvas, child: Icon(Icons.save)),
                 FloatingActionButton(heroTag: "load", onPressed: loadConfig, child: Icon(Icons.folder_open)),

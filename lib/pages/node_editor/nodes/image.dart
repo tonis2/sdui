@@ -11,6 +11,9 @@ class ImageOutput {
 }
 
 class ImageNode extends Node {
+  @override
+  String get typeName => 'ImageNode';
+
   ImageNode({
     super.color = Colors.lightGreen,
     super.label = "Image",

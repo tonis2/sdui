@@ -80,3 +80,6 @@ flutter:
         - asset: assets/Roboto-Regular.ttf
         - asset: assets/Roboto-SemiBold.ttf
           weight: 600
+    # - family: MaterialIcons
+    #   fonts:
+    #     - asset: assets/MaterialIcons-Regular.ttf

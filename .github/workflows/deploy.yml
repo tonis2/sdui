@@ -31,7 +31,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --dart-define=flavor=prod --release --wasm --source-maps --pwa-strategy=offline-first --base-href "/${{ github.event.repository.name }}/"
+        run: flutter build web --base-href "/${{ github.event.repository.name }}/" --dart-define=flavor=prod --release --wasm --source-maps --pwa-strategy=offline-first
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

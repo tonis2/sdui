@@ -50,6 +50,9 @@ List<FormInput> _defaultNodes = [
 ];
 
 class KoboldNode extends FormNode {
+  @override
+  String get typeName => 'KoboldNode';
+
   KoboldNode({
     super.color = Colors.orangeAccent,
     super.label = "Kobold API",

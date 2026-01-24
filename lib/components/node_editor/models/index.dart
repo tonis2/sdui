@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../controller/node_editor_controller.dart';
 
 /// Execution context that caches node results during a single execution run.
 /// This prevents nodes from being executed multiple times when multiple
@@ -123,6 +122,10 @@ abstract class Node extends StatelessWidget {
   final Size size;
   Offset offset;
 
+  /// Override this in subclasses with a string literal.
+  /// Do not use runtimeType.toString() as it gets minified in release builds.
+  String get typeName;
+
   Node({
     this.id,
     required this.label,
@@ -137,7 +140,7 @@ abstract class Node extends StatelessWidget {
 
   Map<String, dynamic> toJson() {
     return {
-      "type": runtimeType.toString(),
+      "type": typeName,
       "uuid": uuid,
       "label": label,
       "offset": {"dx": offset.dx, "dy": offset.dy},

@@ -196,6 +196,9 @@ Validator defaultValidator = (value) {
 };
 
 class FormNode extends Node {
+  @override
+  String get typeName => 'FormNode';
+
   FormNode({
     super.color = Colors.orangeAccent,
     super.label = "Default form",
@@ -251,7 +254,7 @@ class FormNode extends Node {
           children: formInputs
               .map(
                 (item) => Row(
-                  crossAxisAlignment: .center,
+                  crossAxisAlignment: .start,
                   mainAxisAlignment: .start,
                   mainAxisSize: .min,
                   spacing: 5,
