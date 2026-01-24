@@ -14,20 +14,7 @@ class FolderNode extends FormNode {
     super.uuid,
     super.key,
     List<FormInput>? customFormInputs,
-  }) : super(
-         formInputs:
-             customFormInputs ??
-             [
-               FormInput(
-                 label: "Folder name",
-                 type: FormInputType.dropdown,
-                 width: 300,
-                 height: 80,
-                 options: [],
-                 validator: defaultValidator,
-               ),
-             ],
-       );
+  }) : super(formInputs: customFormInputs ?? []);
 
   factory FolderNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
@@ -55,6 +42,15 @@ class FolderNode extends FormNode {
         label: "Folders",
         type: FormInputType.dropdown,
         defaultValue: defaultValue,
+        suffix: (context) {
+          return Tooltip(
+            message: "Add new folder",
+            child: InkWell(
+              onTap: () => createFolder(context),
+              child: Icon(Icons.add, color: Colors.black, size: 35),
+            ),
+          );
+        },
         width: 300,
         height: 80,
         options: folders.values.map((value) => value.name).toList(),
@@ -137,13 +133,6 @@ class FolderNode extends FormNode {
     // ThemeData theme = Theme.of(context);
     // NodeEditorController? provider = NodeControls.of(context);
 
-    return Column(
-      spacing: 10,
-      children: [
-        super.build(context),
-        TextButton(onPressed: () => createFolder(context), child: const Text("Create new folder")),
-        SizedBox(height: 10),
-      ],
-    );
+    return Column(spacing: 10, children: [super.build(context), SizedBox(height: 10)]);
   }
 }

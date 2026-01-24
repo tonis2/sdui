@@ -39,12 +39,6 @@ class ImageNode extends Node {
     );
   }
 
-  @override
-  Map<String, dynamic> toJson() {
-    final json = super.toJson();
-    return json;
-  }
-
   ui.Image? image;
   Uint8List? data;
 

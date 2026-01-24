@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import '/components/index.dart';
 import 'nodes/form.dart';
-import '/state.dart';
 import '/models/index.dart';
 import 'nodes/image.dart';
 import 'nodes/kobold_node.dart';
 import 'nodes/folder.dart';
 import 'package:hive_ce/hive_ce.dart';
+import '/state.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -40,10 +40,10 @@ class _State extends State<NodeEditor> {
       setState(() {});
     });
 
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   AppState provider = Inherited.of(context)!;
-    //   provider.loadData(context);
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppState provider = Inherited.of(context)!;
+      provider.loadData(context);
+    });
 
     super.initState();
   }
@@ -83,7 +83,7 @@ class _State extends State<NodeEditor> {
     // Optionally register FolderNode
     controller.registerNodeType(
       NodeTypeMetadata(
-        typeName: 'FolderNode',
+        typeName: (FolderNode).toString(),
         displayName: 'Folder',
         description: 'Organize files in folders',
         icon: Icons.folder,

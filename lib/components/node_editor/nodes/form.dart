@@ -7,6 +7,7 @@ enum FormInputType { text, textArea, range, int, double, dropdown }
 FilteringTextInputFormatter _doubleInputFilter = FilteringTextInputFormatter.allow(RegExp(r'(^\d*[\.]?\d{0,2})'));
 
 typedef Validator = String? Function(String?)?;
+typedef Suffix = Widget Function(BuildContext);
 
 class FormInput {
   String label;
@@ -19,6 +20,7 @@ class FormInput {
   String? defaultValue;
   Validator? validator;
   List<String>? options;
+  Suffix? suffix;
   int maxLines;
   int minLines;
   FormInput({
@@ -33,6 +35,7 @@ class FormInput {
     this.defaultValue,
     this.validator,
     this.options,
+    this.suffix,
   }) {
     if (defaultValue != null) controller = TextEditingController(text: defaultValue);
   }
@@ -41,7 +44,7 @@ class FormInput {
     ThemeData theme = Theme.of(context);
     ColorScheme colors = theme.colorScheme;
 
-    InputDecoration inputDecoration(String labelText, {Widget? suffix}) => InputDecoration(
+    InputDecoration inputDecoration(String labelText) => InputDecoration(
       labelText: labelText,
       labelStyle: theme.textTheme.bodySmall?.copyWith(color: colors.tertiary),
       floatingLabelStyle: theme.textTheme.bodySmall?.copyWith(color: theme.highlightColor),
@@ -68,7 +71,6 @@ class FormInput {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: colors.error, width: 2),
       ),
-      suffix: suffix,
     );
 
     Widget buildContainer({required Widget child}) =>
@@ -234,7 +236,21 @@ class FormNode extends Node {
       key: formKey,
       child: ConstrainedBox(
         constraints: BoxConstraints(minWidth: size.width, maxHeight: size.height),
-        child: Wrap(spacing: 5, runSpacing: 8, children: formInputs.map((item) => item.build(context)).toList()),
+        child: Wrap(
+          spacing: 5,
+          runSpacing: 8,
+          children: formInputs
+              .map(
+                (item) => Row(
+                  crossAxisAlignment: .center,
+                  mainAxisAlignment: .start,
+                  mainAxisSize: .min,
+                  spacing: 5,
+                  children: [item.build(context), if (item.suffix != null) item.suffix!(context)],
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
