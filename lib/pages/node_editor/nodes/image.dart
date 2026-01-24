@@ -42,7 +42,7 @@ class ImageNode extends Node {
   Uint8List? data;
 
   @override
-  Future<ImageOutput> executeImpl(BuildContext context) async {
+  Future<ImageOutput> executeImpl(BuildContext context, ExecutionContext cache) async {
     if (image == null) throw Exception("Image is empty");
     return ImageOutput(data: data!, size: Size(image!.width.toDouble(), image!.height.toDouble()));
   }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-
-/// Forward declaration for controller type
-typedef ControllerGetter = dynamic Function();
+import '../controller/node_editor_controller.dart';
 
 /// Execution context that caches node results during a single execution run.
 /// This prevents nodes from being executed multiple times when multiple
@@ -42,20 +40,6 @@ class ExecutionContext {
     _cache.clear();
     _executing.clear();
   }
-}
-
-/// Current execution context, set by the controller during execution runs.
-ExecutionContext? _currentExecutionContext;
-
-/// Get the current execution context. Returns a new one if not in an execution run.
-ExecutionContext get currentExecutionContext => _currentExecutionContext ?? ExecutionContext();
-
-/// Set the current execution context. Called by the controller.
-void setCurrentExecutionContext(ExecutionContext? ctx) => _currentExecutionContext = ctx;
-
-/// Extension to access ExecutionContext from BuildContext.
-extension ExecutionContextExtension on BuildContext {
-  ExecutionContext get executionContext => currentExecutionContext;
 }
 
 /// Represents a connection between two nodes
@@ -190,33 +174,31 @@ abstract class Node extends StatelessWidget {
   Future<void> init(BuildContext context) async {}
 
   /// Execute this node with caching support.
-  /// Gets the ExecutionContext via the BuildContext extension.
+  /// Pass the ExecutionContext from the controller to enable caching.
   /// If this node's result is already cached, returns the cached result.
   /// Otherwise executes [executeImpl] and caches the result.
-  Future<dynamic> execute(BuildContext context) async {
-    final ctx = context.executionContext;
-
+  Future<dynamic> execute(BuildContext context, ExecutionContext cache) async {
     // Return cached result if available
-    if (ctx.hasCached(uuid)) {
-      return ctx.getCached(uuid);
+    if (cache.hasCached(uuid)) {
+      return cache.getCached(uuid);
     }
 
     // Cycle detection
-    if (!ctx.markExecuting(uuid)) {
+    if (!cache.markExecuting(uuid)) {
       throw Exception('Cycle detected at node: $label ($uuid)');
     }
 
     try {
-      final result = await executeImpl(context);
-      ctx.cache(uuid, result);
+      final result = await executeImpl(context, cache);
+      cache.cache(uuid, result);
       return result;
     } finally {
-      ctx.markComplete(uuid);
+      cache.markComplete(uuid);
     }
   }
 
   /// Override this method in subclasses to implement node-specific execution logic.
-  Future<dynamic> executeImpl(BuildContext context) async {
+  Future<dynamic> executeImpl(BuildContext context, ExecutionContext cache) async {
     return Future.value();
   }
 

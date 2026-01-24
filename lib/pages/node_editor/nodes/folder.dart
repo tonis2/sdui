@@ -130,14 +130,14 @@ class FolderNode extends FormNode {
   }
 
   @override
-  Future<dynamic> executeImpl(BuildContext context) async {
+  Future<dynamic> executeImpl(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
     List<Node>? incomingNodes = editor?.incomingNodes(this, 0) ?? [];
 
     for (var node in incomingNodes) {
-      PromptResponse result = await node.execute(context);
+      PromptResponse result = await node.execute(context, cache);
 
       debugPrint("Saving to folder ${formInputs.first.defaultValue}");
 

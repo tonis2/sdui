@@ -77,7 +77,7 @@ class PromptNode extends FormNode {
   }
 
   @override
-  Future<ImagePrompt> executeImpl(BuildContext context) async {
+  Future<ImagePrompt> executeImpl(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? provider = NodeControls.of(context);
     ImagePrompt prompt = ImagePrompt(
       prompt: formInputs[0].controller.text,
@@ -97,12 +97,12 @@ class PromptNode extends FormNode {
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       try {
         for (var node in provider!.incomingNodes(this, 0)) {
-          ImageOutput image = await node.execute(context);
+          ImageOutput image = await node.execute(context, cache);
           prompt.extraImages.add(image.data);
         }
 
         for (var node in provider.incomingNodes(this, 1)) {
-          ImageOutput image = await node.execute(context);
+          ImageOutput image = await node.execute(context, cache);
           prompt.initImages.add(image.data);
         }
 

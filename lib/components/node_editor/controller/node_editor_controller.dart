@@ -19,6 +19,13 @@ class NodeEditorController extends ChangeNotifier {
   final Map<String, Node> nodes = HashMap();
   List<Connection> connections = [];
   Connection? activeConnection;
+  final List<ExecutionContext> _executionContexts = [];
+
+  /// Get all active execution contexts
+  List<ExecutionContext> get executionContexts => List.unmodifiable(_executionContexts);
+
+  /// Check if any execution is in progress
+  bool get isExecuting => _executionContexts.isNotEmpty;
 
   /// Registry with metadata for context menu display
   final Map<String, NodeTypeMetadata> _nodeRegistry = {};
@@ -139,7 +146,7 @@ class NodeEditorController extends ChangeNotifier {
   void connectNodes(Node startNode, Node endNode, int startIndex, int endIndex) {}
 
   /// Return connected nodes for the node at output index
-  List<Node> outGoingNodes<T>(Node node, int index) {
+  List<Node> outGoingNodes(Node node, int index) {
     List<Node> result = [];
     for (var conn in connections) {
       if (conn.startNode.uuid == node.uuid && conn.startIndex == index && conn.endNode != null) {
@@ -181,9 +188,7 @@ class NodeEditorController extends ChangeNotifier {
 
   void addNode(Node node, Offset? position) {
     nodes[node.uuid] = node;
-
     if (position != null) setNodePosition(position, node);
-
     notifyListeners();
   }
 
@@ -211,42 +216,50 @@ class NodeEditorController extends ChangeNotifier {
   /// Execute all endpoint nodes with a shared ExecutionContext.
   /// This ensures upstream nodes are only executed once, even when
   /// multiple endpoints depend on them.
+  /// Multiple executions can run concurrently, each with its own context.
   Future<void> executeAllEndpoints(BuildContext context) async {
     assert(NodeControls.of(context) != null);
 
-    final ctx = ExecutionContext();
-    setCurrentExecutionContext(ctx);
+    final cache = ExecutionContext();
+    _executionContexts.add(cache);
+    notifyListeners();
+
     try {
       final endpoints = getEndpointNodes();
 
       for (final endpoint in endpoints) {
         try {
-          await endpoint.execute(context);
+          await endpoint.execute(context, cache);
         } catch (e) {
           debugPrint('Error executing endpoint ${endpoint.label}: $e');
         }
       }
     } finally {
-      setCurrentExecutionContext(null);
+      _executionContexts.remove(cache);
+      notifyListeners();
     }
   }
 
   /// Execute specific endpoint nodes with a shared ExecutionContext.
+  /// Multiple executions can run concurrently, each with its own context.
   Future<void> executeEndpoints(BuildContext context, List<Node> endpoints) async {
     assert(NodeControls.of(context) != null);
 
-    final ctx = ExecutionContext();
-    setCurrentExecutionContext(ctx);
+    final executionCache = ExecutionContext();
+    _executionContexts.add(executionCache);
+    notifyListeners();
+
     try {
       for (final endpoint in endpoints) {
         try {
-          await endpoint.execute(context);
+          await endpoint.execute(context, executionCache);
         } catch (e) {
           debugPrint('Error executing endpoint ${endpoint.label}: $e');
         }
       }
     } finally {
-      setCurrentExecutionContext(null);
+      _executionContexts.remove(executionCache);
+      notifyListeners();
     }
   }
 }

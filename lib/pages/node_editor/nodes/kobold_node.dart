@@ -55,7 +55,7 @@ class KoboldNode extends FormNode {
   }
 
   @override
-  Future<PromptResponse> executeImpl(BuildContext context) async {
+  Future<PromptResponse> executeImpl(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
@@ -67,7 +67,7 @@ class KoboldNode extends FormNode {
           throw Exception("No node connected to Prompt input");
         }
         Node node = incomingNodes.first;
-        ImagePrompt prompt = await node.execute(context);
+        ImagePrompt prompt = await node.execute(context, cache);
         var response = await provider.createPromptRequest(prompt, api.postImageToImage(prompt));
 
         prompt.clearImages();
