@@ -77,7 +77,7 @@ class PromptNode extends FormNode {
   }
 
   @override
-  Future<ImagePrompt> executeImpl(BuildContext context, ExecutionContext cache) async {
+  Future<ImagePrompt> run(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? provider = NodeControls.of(context);
     ImagePrompt prompt = ImagePrompt(
       prompt: formInputs[0].controller.text,

@@ -55,7 +55,7 @@ class KoboldNode extends FormNode {
   }
 
   @override
-  Future<PromptResponse> executeImpl(BuildContext context, ExecutionContext cache) async {
+  Future<PromptResponse> run(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 

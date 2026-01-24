@@ -10,7 +10,81 @@ import 'package:responsive_grid_list/responsive_grid_list.dart';
 import 'package:file_saver/file_saver.dart';
 import 'dart:math';
 
-// import 'package:image/image.dart' as imageLib;
+Future<void> showPasswordDialog(BuildContext context, String folder) async {
+  ThemeData theme = Theme.of(context);
+  AppState provider = Inherited.of(context)!;
+  String? password;
+
+  var response = await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Enter password to unlock storage", style: theme.textTheme.titleSmall),
+        content: SizedBox(
+          width: 600,
+          height: 200,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            spacing: 10,
+            children: [
+              TextField(
+                obscureText: true,
+                decoration: InputDecoration(label: Text("Password", style: theme.textTheme.bodyMedium)),
+                onChanged: (value) => password = value,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 25,
+                children: [
+                  ElevatedButton(
+                    style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
+                    onPressed: () => Navigator.pop(context, password),
+                    child: Text("Submit", style: theme.textTheme.bodyMedium),
+                  ),
+                  ElevatedButton(
+                    style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text("Skip", style: theme.textTheme.bodyMedium),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  try {
+    if (response != null && response.toString().isNotEmpty) {
+      // User provided password
+      provider.boxMap[folder] = await Hive.openLazyBox<PromptData>(
+        folder,
+        encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
+      );
+    }
+  } catch (err) {
+    print(err.toString());
+  }
+}
+
+void unlockFolder(BuildContext context, String folder) {
+  AppState provider = Inherited.of(context)!;
+  var folders = provider.folders.values.where((Folder item) => item.name == folder);
+
+  // Folder is encrypted, ask user to unlock it and then cache it
+  if (folders.isNotEmpty && folders.first.encrypted && provider.boxMap[folder] == null) {
+    showPasswordDialog(context, folders.first.name);
+  }
+
+  if (folders.isNotEmpty && !folders.first.encrypted && provider.boxMap[folder] == null) {
+    Hive.openLazyBox<PromptData>(folder).then((box) {
+      provider.boxMap[folder] = box;
+    });
+  }
+}
 
 class FolderView extends StatefulWidget {
   final String path;
@@ -43,7 +117,7 @@ class _State extends State<FolderView> {
     if (box == null && await Hive.boxExists("folders")) {
       Folder folder = provider.folders.values.firstWhere((item) => item.name == widget.path);
       if (folder.encrypted) {
-        await _showPasswordDialog(context, widget.path);
+        await showPasswordDialog(context, widget.path);
       } else {
         provider.boxMap[widget.path] = await Hive.openLazyBox<PromptData>(widget.path);
       }
@@ -61,66 +135,6 @@ class _State extends State<FolderView> {
     }
 
     setState(() {});
-  }
-
-  Future<void> _showPasswordDialog(BuildContext context, String folder) async {
-    ThemeData theme = Theme.of(context);
-    AppState provider = Inherited.of(context)!;
-    String? password;
-
-    var response = await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Enter password to unlock storage", style: theme.textTheme.titleSmall),
-          content: SizedBox(
-            width: 600,
-            height: 200,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              spacing: 10,
-              children: [
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(label: Text("Password", style: theme.textTheme.bodyMedium)),
-                  onChanged: (value) => password = value,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 25,
-                  children: [
-                    ElevatedButton(
-                      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
-                      onPressed: () => Navigator.pop(context, password),
-                      child: Text("Submit", style: theme.textTheme.bodyMedium),
-                    ),
-                    ElevatedButton(
-                      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(theme.colorScheme.secondary)),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text("Skip", style: theme.textTheme.bodyMedium),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    try {
-      if (response != null && response.toString().isNotEmpty) {
-        // User provided password
-        provider.boxMap[folder] = await Hive.openLazyBox<PromptData>(
-          folder,
-          encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
-        );
-      }
-    } catch (err) {
-      print(err.toString());
-    }
   }
 
   // @override

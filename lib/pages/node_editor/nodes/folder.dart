@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '/components/node_editor/index.dart';
-import 'package:hive_ce/hive_ce.dart';
 import '/models/index.dart';
 import '/state.dart';
+import '/pages/folder.dart';
+import 'package:hive_ce/hive.dart';
 
 class FolderNode extends FormNode {
   FolderNode({
@@ -35,8 +36,10 @@ class FolderNode extends FormNode {
   Future<void> _recreateFolderList(BuildContext context) async {
     AppState provider = Inherited.of(context)!;
     String? defaultValue;
+
     if (formInputs.isNotEmpty) {
       defaultValue = formInputs.first.defaultValue;
+      unlockFolder(context, defaultValue!);
     }
 
     formInputs = [
@@ -57,6 +60,7 @@ class FolderNode extends FormNode {
         height: 80,
         options: provider.folders.values.map((value) => value.name).toList(),
         validator: defaultValidator,
+        callback: (value) => unlockFolder(context, value),
       ),
     ];
   }
@@ -93,7 +97,10 @@ class FolderNode extends FormNode {
                 ),
                 TextField(
                   controller: passwordController,
-                  decoration: const InputDecoration(labelText: "Password (optional)", border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: "Password (optional, can make the loading slower)",
+                    border: OutlineInputBorder(),
+                  ),
                   obscureText: true,
                 ),
               ],
@@ -130,7 +137,7 @@ class FolderNode extends FormNode {
   }
 
   @override
-  Future<dynamic> executeImpl(BuildContext context, ExecutionContext cache) async {
+  Future<dynamic> run(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 

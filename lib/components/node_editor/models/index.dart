@@ -176,7 +176,7 @@ abstract class Node extends StatelessWidget {
   /// Execute this node with caching support.
   /// Pass the ExecutionContext from the controller to enable caching.
   /// If this node's result is already cached, returns the cached result.
-  /// Otherwise executes [executeImpl] and caches the result.
+  /// Otherwise executes [run] and caches the result.
   Future<dynamic> execute(BuildContext context, ExecutionContext cache) async {
     // Return cached result if available
     if (cache.hasCached(uuid)) {
@@ -189,7 +189,7 @@ abstract class Node extends StatelessWidget {
     }
 
     try {
-      final result = await executeImpl(context, cache);
+      final result = await run(context, cache);
       cache.cache(uuid, result);
       return result;
     } finally {
@@ -198,7 +198,7 @@ abstract class Node extends StatelessWidget {
   }
 
   /// Override this method in subclasses to implement node-specific execution logic.
-  Future<dynamic> executeImpl(BuildContext context, ExecutionContext cache) async {
+  Future<dynamic> run(BuildContext context, ExecutionContext cache) async {
     return Future.value();
   }
 

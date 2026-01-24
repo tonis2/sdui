@@ -8,6 +8,7 @@ FilteringTextInputFormatter _doubleInputFilter = FilteringTextInputFormatter.all
 
 typedef Validator = String? Function(String?)?;
 typedef Suffix = Widget Function(BuildContext);
+typedef OnChange = void Function(String value);
 
 class FormInput {
   String label;
@@ -21,6 +22,7 @@ class FormInput {
   Validator? validator;
   List<String>? options;
   Suffix? suffix;
+  OnChange? callback;
   int maxLines;
   int minLines;
   FormInput({
@@ -36,6 +38,7 @@ class FormInput {
     this.validator,
     this.options,
     this.suffix,
+    this.callback,
   }) {
     if (defaultValue != null) controller = TextEditingController(text: defaultValue);
   }
@@ -99,6 +102,7 @@ class FormInput {
             decoration: inputDecoration(label),
             keyboardType: TextInputType.number,
             validator: validator,
+            onChanged: callback,
           ),
         );
 
@@ -111,6 +115,7 @@ class FormInput {
             decoration: inputDecoration(label),
             keyboardType: TextInputType.number,
             validator: validator,
+            onChanged: callback,
           ),
         );
 
@@ -134,6 +139,7 @@ class FormInput {
             onChanged: (value) {
               defaultValue = value.toString();
               controller.text = value.toString();
+              if (callback != null) callback!(value.toString());
             },
           ),
         );
@@ -226,7 +232,7 @@ class FormNode extends Node {
   }
 
   @override
-  Future<dynamic> executeImpl(BuildContext context, ExecutionContext cache) async {
+  Future<dynamic> run(BuildContext context, ExecutionContext cache) async {
     throw Exception("Form execution failed");
   }
 
