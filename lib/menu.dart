@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sdui/services/pwa/pwa_install.dart';
 import '/state.dart';
 import '/config.dart';
 import 'package:go_router/go_router.dart';
@@ -24,16 +23,9 @@ class Menu extends StatefulWidget {
 }
 
 class _State extends State<Menu> {
-  final _pwaService = PwaInstallService();
-  bool _showInstall = false;
-
   @override
   void initState() {
     super.initState();
-    _showInstall = _pwaService.isInstallAvailable;
-    _pwaService.onInstallAvailable.listen((available) {
-      setState(() => _showInstall = available);
-    });
   }
 
   @override
@@ -57,51 +49,7 @@ class _State extends State<Menu> {
               ),
             );
           }),
-          const Spacer(),
-          // Install button at bottom
-          if (_showInstall)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _InstallTile(
-                onTap: () async {
-                  await _pwaService.promptInstall();
-                },
-              ),
-            ),
-          const SizedBox(height: 16),
         ],
-      ),
-    );
-  }
-}
-
-class _InstallTile extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _InstallTile({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color.fromRGBO(250, 172, 39, 1),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        hoverColor: const Color.fromRGBO(250, 172, 39, 0.8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              const Icon(Icons.download, size: 20, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text(
-                'Install App',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

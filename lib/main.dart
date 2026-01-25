@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '/services/pwa/pwa_install.dart';
 import 'menu.dart';
 import 'dart:ui';
 import '/state.dart';
@@ -28,8 +27,6 @@ var rootNavigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize PWA install service for web
-  PwaInstallService().init();
   AppState state = AppState();
   runApp(Main(state: state));
 }
