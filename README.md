@@ -16,19 +16,17 @@ You can just install the webapp as PWA app, and it should be working offline.
 * You can create your own new nodes, check the current [nodes](https://github.com/tonis2/sdui/tree/main/lib/pages/node_editor/nodes) for example, maybe in the future I can get dynamic code working with dart, so its possible to download new nodes without rebuilding the project.
 
 
-
 Run locally
 
 ```
-flutter run -d chrome --no-web-browser-launch --web-port 8000 --dart-define=flavor=prod
+flutter run -d chrome --no-web-browser-launch --web-port 8000
 
-flutter run -d web-server --web-port 8000 --dart-define=flavor=prod
+flutter run -d web-server --web-port 8000
 ```
-
 
 Build 
 ```
-flutter build web --dart-define=flavor=prod --release --wasm --source-maps --pwa-strategy=offline-first
+flutter build web --release --wasm --source-maps --pwa-strategy=offline-first
 ```
 
 
