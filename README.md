@@ -1,6 +1,6 @@
 # sdui
 
-A new Flutter project.
+Node based web UI for managing AI prompts, development is in early stage.
 
 ## Getting Started
 
