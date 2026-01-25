@@ -30,7 +30,7 @@ void main() async {
 
   // Initialize PWA install service for web
   PwaInstallService().init();
-  AppState state = await createState();
+  AppState state = AppState();
   runApp(Main(state: state));
 }
 

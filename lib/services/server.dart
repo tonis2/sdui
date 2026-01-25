@@ -115,3 +115,15 @@ class Server {
   //   onError!(UnAuthorizedException('Unauthorized access'));
   // }
 }
+
+Future<void> waitForServerReady(Future<dynamic> Function() requestFactory, {int maxRetries = 50}) async {
+  for (var i = 0; i < maxRetries; i++) {
+    try {
+      await requestFactory();
+      return; // Success - server is back up
+    } catch (e) {
+      if (i == maxRetries - 1) rethrow; // Give up after max retries
+      await Future.delayed(const Duration(seconds: 5));
+    }
+  }
+}

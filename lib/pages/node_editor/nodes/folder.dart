@@ -40,6 +40,12 @@ class FolderNode extends FormNode {
     );
   }
 
+  @override
+  Map<String, dynamic> toJson() {
+    formInputs[0].options = [];
+    return super.toJson();
+  }
+
   Future<void> _recreateFolderList(BuildContext context) async {
     AppState provider = Inherited.of(context)!;
 
@@ -151,13 +157,18 @@ class FolderNode extends FormNode {
       var box = provider.boxMap[formInputs.first.defaultValue];
 
       if (box != null) {
+        // Dont save image data to local storage twice
+        result.prompt?.clearImages();
+
+        // Add data to local storage
         box.add(
           PromptData(
             width: result.prompt?.width,
             height: result.prompt?.height,
-            prompt: result.prompt?.prompt,
+            prompt: result.prompt,
             data: result.images.first,
             name: result.info,
+            mimeType: (result.prompt != null && result.prompt!.frames > 0) ? "gif" : "img",
           ),
         );
       } else {

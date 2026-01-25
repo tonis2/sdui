@@ -13,7 +13,7 @@ import 'package:sdui/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    AppState state = await createState();
+    AppState state = AppState();
     // Build our app and trigger a frame.
     await tester.pumpWidget(Main(state: state));
 

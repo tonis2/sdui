@@ -4,6 +4,7 @@ import 'package:vector_math/vector_math_64.dart' as vector;
 import '../controller/node_editor_controller.dart';
 import '../painters/line_painter.dart';
 import '../painters/grid_painter.dart';
+import '../utils/node_layout.dart';
 import 'node_base_widget.dart';
 import 'context_menus.dart';
 
@@ -158,6 +159,21 @@ class _NodeCanvasState extends State<NodeCanvas> {
     });
   }
 
+  /// Calculate canvas size that encompasses all nodes with padding
+  Size _calculateCanvasSize() {
+    double maxX = widget.size.width;
+    double maxY = widget.size.height;
+
+    for (final node in widget.controller.nodes.values) {
+      final nodeRight = node.offset.dx + node.size.width + 200;
+      final nodeBottom = node.offset.dy + NodeLayout.totalNodeHeight(node) + 200;
+      if (nodeRight > maxX) maxX = nodeRight;
+      if (nodeBottom > maxY) maxY = nodeBottom;
+    }
+
+    return Size(maxX, maxY);
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -187,26 +203,31 @@ class _NodeCanvasState extends State<NodeCanvas> {
                 scaleEnabled: true,
                 boundaryMargin: const EdgeInsets.all(double.infinity),
                 constrained: false,
-                child: SizedBox(
-                  width: widget.size.width,
-                  height: widget.size.height,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CustomPaint(
-                        painter: LinePainter(controller: widget.controller),
-                        size: widget.size,
+                child: Builder(
+                  builder: (context) {
+                    final canvasSize = _calculateCanvasSize();
+                    return SizedBox(
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          CustomPaint(
+                            painter: LinePainter(controller: widget.controller),
+                            size: canvasSize,
+                          ),
+                          ...widget.controller.nodes.entries.map((item) {
+                            final node = item.value;
+                            return Positioned(
+                              top: node.offset.dy,
+                              left: node.offset.dx,
+                              child: NodeBaseWidget(node: node, controller: widget.controller),
+                            );
+                          }),
+                        ],
                       ),
-                      ...widget.controller.nodes.entries.map((item) {
-                        final node = item.value;
-                        return Positioned(
-                          top: node.offset.dy,
-                          left: node.offset.dx,
-                          child: NodeBaseWidget(node: node, controller: widget.controller),
-                        );
-                      }),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),

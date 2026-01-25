@@ -6,11 +6,10 @@ import 'dart:async';
 
 import '/services/server.dart';
 
-///Input: {"filename": "Qwen-Rapid-AIO-NSFW-v19_Q4_K.gguf", "overrideconfig": "config.kcpps"}
-
 class KoboldApi extends Server {
   KoboldApi({required super.headers, required super.baseUrl, super.onError});
   Future<dynamic> getModels() => get("/sdapi/v1/sd-models");
+  Future<dynamic> getVersion() => get("/api/extra/version");
   Future<dynamic> getConfigs() => get("/api/admin/list_options").then((value) => value);
   Future<dynamic> changeConfig(String model, String config) =>
       post("/api/admin/reload_config", {"filename": model, "overrideconfig": config}).then((json) => json);
@@ -52,6 +51,7 @@ List<FormInput> _defaultNodes = [
 class KoboldNode extends FormNode {
   @override
   String get typeName => 'KoboldNode';
+  bool loading = false;
 
   KoboldNode({
     super.color = Colors.orangeAccent,
@@ -71,15 +71,22 @@ class KoboldNode extends FormNode {
         (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? _defaultNodes;
 
     return KoboldNode(
-      label: data.label,
+      size: Size(400, 400),
+      label: "Kobold API",
+      color: Colors.orangeAccent,
       offset: data.offset,
-      size: data.size,
-      color: data.color,
-      inputs: data.inputs,
-      outputs: data.outputs,
+      inputs: const [Input(label: "Prompt", color: Colors.lightGreen)],
+      outputs: const [Output(label: "Image", color: Colors.yellow)],
       uuid: json["uuid"] as String?,
       customFormInputs: formInputs,
     );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    formInputs[1].options = [];
+    formInputs[2].options = [];
+    return super.toJson();
   }
 
   @override
@@ -112,13 +119,21 @@ class KoboldNode extends FormNode {
         if (incomingNodes.isEmpty) {
           throw Exception("No node connected to Prompt input");
         }
-        Node node = incomingNodes.first;
-        ImagePrompt prompt = await node.execute(context, cache);
 
-        // Change the modal
+        ImagePrompt prompt = await incomingNodes.first.execute(context, cache);
+
+        // Change the model and wait for server to restart
         if (formInputs[1].defaultValue != "default" && formInputs[2].defaultValue != "default") {
           print("Switching kobold model");
+          loading = true;
+          editor?.requestUpdate();
+
           await api.changeConfig(formInputs[2].defaultValue!, formInputs[1].defaultValue!);
+          await Future<void>.delayed(const Duration(seconds: 5));
+          await waitForServerReady(() => api.getVersion());
+
+          loading = false;
+          editor?.requestUpdate();
         }
 
         var response = await provider.createPromptRequest(prompt, api.postImageToImage(prompt));
@@ -136,7 +151,11 @@ class KoboldNode extends FormNode {
 
   @override
   Widget build(BuildContext context) {
-    ThemeData theme = Theme.of(context);
+    if (loading) {
+      return Center(
+        child: SizedBox(width: 50, height: 20, child: CircularProgressIndicator(color: Colors.black)),
+      );
+    }
 
     return Column(
       spacing: 10,

@@ -147,6 +147,7 @@ class _State extends State<FolderView> {
   void openGallery(PromptData image, int index) {
     ThemeData theme = Theme.of(context);
     Size size = MediaQuery.sizeOf(context);
+    TextStyle? textStyle = theme.textTheme.bodyMedium?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9));
 
     SwipeImageGallery(
       context: context,
@@ -164,9 +165,21 @@ class _State extends State<FolderView> {
                     if (item.prompt != null)
                       Align(
                         alignment: .bottomCenter,
-                        child: SelectableText(
-                          item.prompt!,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: const Color.fromRGBO(255, 255, 255, 0.9)),
+                        child: Column(
+                          mainAxisAlignment: .end,
+                          spacing: 5,
+                          children: [
+                            SelectableText(item.prompt?.prompt ?? "-", style: textStyle),
+                            Row(
+                              mainAxisAlignment: .center,
+                              spacing: 5,
+                              children: [
+                                Text("Steps: ${item.prompt?.steps},", style: textStyle),
+                                Text("Sampler: ${item.prompt?.sampler},", style: textStyle),
+                                Text("Width: ${item.prompt?.width}, Height: ${item.prompt?.height}", style: textStyle),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -178,82 +191,64 @@ class _State extends State<FolderView> {
     ).show();
   }
 
-  Widget galleryView() {
-    Widget imageView(PromptData item) {
-      return Stack(
-        children: [
-          Image.memory(item.data),
-          Positioned(
-            right: 5,
-            top: 5,
-            child: Container(
-              padding: EdgeInsets.all(5),
-              color: Colors.blueGrey,
-              child: Column(
-                spacing: 10,
-                children: [
-                  InkWell(
-                    child: Tooltip(
-                      message: "Delete",
-                      child: Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onTap: () {
-                      data.removeWhere((img) => img.key == item.key);
-                      item.delete();
-                      setState(() {});
-                    },
+  Widget imageView(PromptData item) {
+    return Stack(
+      children: [
+        Image.memory(item.data),
+        Positioned(
+          right: 5,
+          top: 5,
+          child: Container(
+            padding: EdgeInsets.all(5),
+            color: Colors.blueGrey,
+            child: Column(
+              spacing: 10,
+              children: [
+                InkWell(
+                  child: Tooltip(
+                    message: "Delete",
+                    child: Icon(Icons.delete, color: Colors.white),
                   ),
-                  InkWell(
-                    child: Tooltip(
-                      message: "Save",
-                      child: Icon(Icons.save, color: Colors.white),
-                    ),
-                    onTap: () async {
-                      await FileSaver.instance.saveFile(
-                        name: item.name ?? "default",
-                        mimeType: MimeType.png,
-                        bytes: item.data,
-                      );
-                    },
+                  onTap: () {
+                    data.removeWhere((img) => img.key == item.key);
+                    item.delete();
+                    setState(() {});
+                  },
+                ),
+                InkWell(
+                  child: Tooltip(
+                    message: "Save",
+                    child: Icon(Icons.save, color: Colors.white),
                   ),
-                  // InkWell(
-                  //   child: Tooltip(
-                  //     message: "Use for inpaint",
-                  //     child: Icon(Icons.edit, color: Colors.white),
-                  //   ),
-                  //   onTap: () async {
-                  //     // provider.clearImages();
-                  //     // provider.painterController.setBackground(
-                  //     //   BackgroundImage(width: image.width, height: image.height, data: image.data, name: image.name),
-                  //     // );
-                  //     // provider.imagePrompt.addExtraImage(image.data);
-                  //     // provider.imagePrompt.addInitImage(image.data);
-                  //     // provider.imagePrompt.width = image.width;
-                  //     // provider.imagePrompt.height = image.height;
-                  //     // provider.imagePrompt.noiseStrenght = 0.95;
-                  //     context.go(AppRoutes.home);
-                  //   },
-                  // ),
-                  InkWell(
-                    child: Tooltip(
-                      message: "Use for prompt",
-                      child: Icon(Icons.image, color: Colors.white),
-                    ),
-                    onTap: () async {
-                      AppState provider = Inherited.of(context)!;
-                      var image = await decodeImageFromList(item.data);
-                      provider.nodeController.addNode(ImageNode(data: item.data, image: image), Offset(100, 100));
-                      context.go(AppRoutes.home);
-                    },
+                  onTap: () async {
+                    await FileSaver.instance.saveFile(
+                      name: item.name ?? "default",
+                      mimeType: MimeType.png,
+                      bytes: item.data,
+                    );
+                  },
+                ),
+                InkWell(
+                  child: Tooltip(
+                    message: "Use for prompt",
+                    child: Icon(Icons.image, color: Colors.white),
                   ),
-                ],
-              ),
+                  onTap: () async {
+                    AppState provider = Inherited.of(context)!;
+                    var image = await decodeImageFromList(item.data);
+                    provider.nodeController.addNode(ImageNode(data: item.data, image: image), Offset(100, 100));
+                    context.go(AppRoutes.home);
+                  },
+                ),
+              ],
             ),
           ),
-        ],
-      );
-    }
+        ),
+      ],
+    );
+  }
 
+  Widget galleryView() {
     return Expanded(
       child: ResponsiveGridList(
         horizontalGridSpacing: 16,

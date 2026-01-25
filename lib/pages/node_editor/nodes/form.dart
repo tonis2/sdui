@@ -100,13 +100,13 @@ class PromptNode extends FormNode {
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       try {
         for (var node in provider!.incomingNodes(this, 0)) {
-          ImageOutput image = await node.execute(context, cache);
-          prompt.extraImages.add(image.data);
+          PromptResponse image = await node.execute(context, cache);
+          prompt.extraImages.add(image.images.first);
         }
 
         for (var node in provider.incomingNodes(this, 1)) {
-          ImageOutput image = await node.execute(context, cache);
-          prompt.initImages.add(image.data);
+          PromptResponse image = await node.execute(context, cache);
+          prompt.initImages.add(image.images.first);
         }
 
         return prompt;

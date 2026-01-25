@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:hive_ce/hive.dart';
 import 'package:flutter/material.dart';
 
-class ImagePrompt {
+class ImagePrompt extends HiveObject {
   double guidance;
   int steps;
   int width;
@@ -40,7 +40,7 @@ class ImagePrompt {
     this.maskInvert = false,
   });
 
-  factory ImagePrompt.fromJson(Map<String, dynamic> json) {
+  factory ImagePrompt.fromJson(dynamic json) {
     return ImagePrompt(
       prompt: json["prompt"],
       negativePrompt: json["negative_prompt"],
@@ -118,7 +118,7 @@ class PromptData extends HiveObject {
   final Uint8List data;
   final String? mimeType;
   final String? name;
-  final String? prompt;
+  final ImagePrompt? prompt;
   final String date = DateTime.now().toString();
 
   PromptData({this.width, this.height, required this.data, this.name, this.mimeType, this.prompt});
@@ -129,8 +129,8 @@ class PromptData extends HiveObject {
       height: json["height"],
       data: json["data"],
       mimeType: json["mimeType"],
-      name: json["name"],
       prompt: json["prompt"],
+      name: json["name"],
     );
   }
 
@@ -180,6 +180,21 @@ class Folder extends HiveObject {
 
   Map<String, dynamic> toJson() {
     return {"name": name, "encrypted": encrypted, "date": date};
+  }
+}
+
+class ImagePromptAdapter extends TypeAdapter<ImagePrompt> {
+  @override
+  final typeId = 3;
+
+  @override
+  ImagePrompt read(BinaryReader reader) {
+    return ImagePrompt.fromJson(reader.read());
+  }
+
+  @override
+  void write(BinaryWriter writer, ImagePrompt obj) {
+    writer.write(obj.toJson());
   }
 }
 

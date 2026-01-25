@@ -1,14 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:sdui/models/index.dart';
 import 'dart:ui' as ui;
 import '/components/node_editor/index.dart';
-
-class ImageOutput {
-  Uint8List data;
-  Size size;
-  ImageOutput({required this.data, required this.size});
-}
 
 class ImageNode extends Node {
   @override
@@ -47,9 +42,9 @@ class ImageNode extends Node {
   Uint8List? data;
 
   @override
-  Future<ImageOutput> run(BuildContext context, ExecutionContext cache) async {
+  Future<PromptResponse> run(BuildContext context, ExecutionContext cache) async {
     if (image == null) throw Exception("Image is empty");
-    return ImageOutput(data: data!, size: Size(image!.width.toDouble(), image!.height.toDouble()));
+    return PromptResponse(images: [data!]);
   }
 
   void pickImage(BuildContext context) async {

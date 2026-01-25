@@ -32,19 +32,53 @@ class Inherited extends InheritedNotifier<AppState> {
   bool updateShouldNotify(InheritedNotifier<AppState> oldWidget) => true;
 }
 
-Future<AppState> createState() async {
-  Hive.registerAdapter(ImageAdapter());
-  Hive.registerAdapter(FolderAdapter());
-  Hive.registerAdapter(ConfigAdapter());
-
-  // Open settings box to track encryption status
-
-  return AppState();
-}
-
 class AppState extends ChangeNotifier {
   AppState() {
-    _registerNodeTypes();
+    // Register nodes and storage stuff
+    Hive.registerAdapter(ImageAdapter());
+    Hive.registerAdapter(FolderAdapter());
+    Hive.registerAdapter(ConfigAdapter());
+    Hive.registerAdapter(ImagePromptAdapter());
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'ImageNode',
+        displayName: 'Image',
+        description: 'Load and display images',
+        icon: Icons.image,
+        factory: (json) => ImageNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'PromptNode',
+        displayName: 'Prompt Config',
+        description: 'Configure AI prompts',
+        icon: Icons.edit_note,
+        factory: (json) => PromptNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'KoboldNode',
+        displayName: 'Kobold API',
+        description: 'Connect to Kobold AI API',
+        icon: Icons.smart_toy,
+        factory: (json) => KoboldNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'FolderNode',
+        displayName: 'Folder',
+        description: 'Organize files in folders',
+        icon: Icons.folder,
+        factory: (json) => FolderNode.fromJson(json),
+      ),
+    );
     Hive.openBox<Folder>('folders').then((box) {
       folders = box;
     });
@@ -87,49 +121,6 @@ class AppState extends ChangeNotifier {
         .catchError((err) {
           debugPrint(err.toString());
         });
-  }
-
-  void _registerNodeTypes() {
-    // Register nodes with metadata for context menu
-    nodeController.registerNodeType(
-      NodeTypeMetadata(
-        typeName: 'ImageNode',
-        displayName: 'Image',
-        description: 'Load and display images',
-        icon: Icons.image,
-        factory: (json) => ImageNode.fromJson(json),
-      ),
-    );
-
-    nodeController.registerNodeType(
-      NodeTypeMetadata(
-        typeName: 'PromptNode',
-        displayName: 'Prompt Config',
-        description: 'Configure AI prompts',
-        icon: Icons.edit_note,
-        factory: (json) => PromptNode.fromJson(json),
-      ),
-    );
-
-    nodeController.registerNodeType(
-      NodeTypeMetadata(
-        typeName: 'KoboldNode',
-        displayName: 'Kobold API',
-        description: 'Connect to Kobold AI API',
-        icon: Icons.smart_toy,
-        factory: (json) => KoboldNode.fromJson(json),
-      ),
-    );
-
-    nodeController.registerNodeType(
-      NodeTypeMetadata(
-        typeName: 'FolderNode',
-        displayName: 'Folder',
-        description: 'Organize files in folders',
-        icon: Icons.folder,
-        factory: (json) => FolderNode.fromJson(json),
-      ),
-    );
   }
 
   Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<PromptResponse> request) async {
