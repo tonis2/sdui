@@ -69,7 +69,14 @@
 
   <script>
     document.addEventListener('contextmenu', e => e.preventDefault());
-    
+
+    // Capture PWA install prompt early before Flutter loads
+    window.deferredPwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPwaPrompt = e;
+    });
+
     {{flutter_js}}
     {{flutter_build_config}}
 
