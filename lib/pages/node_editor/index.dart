@@ -101,7 +101,7 @@ class _State extends State<NodeEditor> {
                     FloatingActionButton(
                       heroTag: "run",
                       onPressed: () => provider.nodeController.executeAllEndpoints(ctx),
-                      child: Icon(Icons.arrow_forward),
+                      child: Icon(Icons.play_arrow),
                     ),
                     FloatingActionButton(
                       heroTag: "save",
