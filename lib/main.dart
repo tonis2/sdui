@@ -51,52 +51,61 @@ Widget queueView(BuildContext context) {
           mainAxisSize: .min,
           mainAxisAlignment: .start,
           crossAxisAlignment: .start,
-          children: provider.promptQueue.map((item) {
-            MemoryImage? image;
+          children: [
+            ...provider.promptQueue.map((item) {
+              MemoryImage? image;
 
-            if (item.image != null) {
-              image = MemoryImage(item.image!);
-            }
+              if (item.image != null) {
+                image = MemoryImage(item.image!);
+              }
 
-            return SizedBox(
-              width: 350,
+              return SizedBox(
+                width: 350,
+                child: Row(
+                  mainAxisSize: .min,
+                  mainAxisAlignment: .start,
+                  crossAxisAlignment: .start,
+                  spacing: 10,
+                  children: [
+                    if (image != null) Image(image: ResizeImage(image, width: 60, height: 60)),
+                    Column(
+                      mainAxisSize: .min,
+                      spacing: 5,
+                      children: [
+                        if (item.startTime == null) Text("Item in queue", style: theme.textTheme.bodySmall),
+                        if (item.startTime != null)
+                          Text(
+                            "Start time: ${item.startTime.toString().split(" ")[1]}",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        if (item.endTime != null)
+                          Text("End time: ${item.endTime.toString().split(" ")[1]}", style: theme.textTheme.bodySmall),
+                        if (item.endTime != null && item.startTime != null)
+                          Text(
+                            "Time spent: ${item.endTime!.difference(item.startTime!).toString().split(".")[0]}",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+            OutlinedButton(
+              onPressed: () {
+                provider.promptQueue.retainWhere((item) => item.endTime == null);
+                provider.update();
+              },
               child: Row(
-                mainAxisSize: .min,
-                mainAxisAlignment: .start,
-                crossAxisAlignment: .start,
-                spacing: 10,
+                spacing: 15,
+                mainAxisAlignment: .center,
                 children: [
-                  if (image != null) Image(image: ResizeImage(image, width: 60, height: 60)),
-                  Column(
-                    mainAxisSize: .min,
-                    spacing: 5,
-                    children: [
-                      if (item.startTime == null) Text("Item in queue", style: theme.textTheme.bodySmall),
-                      if (item.startTime != null)
-                        Text(
-                          "Start time: ${item.startTime.toString().split(" ")[1]}",
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      if (item.endTime != null)
-                        Text("End time: ${item.endTime.toString().split(" ")[1]}", style: theme.textTheme.bodySmall),
-                      if (item.endTime != null && item.startTime != null)
-                        Text(
-                          "Time spent: ${item.endTime!.difference(item.startTime!).toString().split(".")[0]}",
-                          style: theme.textTheme.bodySmall,
-                        ),
-                    ],
-                  ),
-                  InkWell(
-                    onTap: () {
-                      provider.promptQueue.retainWhere((item) => item.endTime == null);
-                      provider.update();
-                    },
-                    child: Icon(Icons.delete_forever, color: theme.colorScheme.tertiary),
-                  ),
+                  Text("Clear", style: theme.textTheme.bodyMedium),
+                  Icon(Icons.delete_forever, color: theme.colorScheme.tertiary),
                 ],
               ),
-            );
-          }).toList(),
+            ),
+          ],
         ),
       ),
     ),

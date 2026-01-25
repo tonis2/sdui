@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import '../controller/node_editor_controller.dart';
 import '../painters/line_painter.dart';
+import '../painters/grid_painter.dart';
 import 'node_base_widget.dart';
 import 'context_menus.dart';
 
@@ -14,25 +15,25 @@ class NodeCanvas extends StatefulWidget {
 
   const NodeCanvas({required this.controller, required this.size, this.zoom = 1.0, super.key});
 
-  static Widget build({
-    required NodeEditorController controller,
-    Size size = const Size(3000, 3000),
-    double zoom = 0.5,
-    List<FloatingActionButton> buttons = const [],
-  }) {
-    return NodeControls(
-      notifier: controller,
-      child: Scaffold(
-        body: NodeCanvas(controller: controller, size: Size(3000, 3000), zoom: 0.5),
-        floatingActionButton: ListenableBuilder(
-          listenable: controller,
-          builder: (ctx, _) {
-            return Column(mainAxisAlignment: MainAxisAlignment.end, spacing: 10, children: buttons);
-          },
-        ),
-      ),
-    );
-  }
+  // static Widget build({
+  //   required NodeEditorController controller,
+  //   Size size = const Size(3000, 3000),
+  //   double zoom = 0.5,
+  //   List<FloatingActionButton> buttons = const [],
+  // }) {
+  //   return NodeControls(
+  //     notifier: controller,
+  //     child: Scaffold(
+  //       body: NodeCanvas(controller: controller, size: Size(3000, 3000), zoom: 0.5),
+  //       floatingActionButton: ListenableBuilder(
+  //         listenable: controller,
+  //         builder: (ctx, _) {
+  //           return Column(mainAxisAlignment: MainAxisAlignment.end, spacing: 10, children: buttons);
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
 
   @override
   State<NodeCanvas> createState() => _NodeCanvasState();
@@ -159,41 +160,59 @@ class _NodeCanvasState extends State<NodeCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: _handlePointerDown,
-      onPointerHover: _handlePointerHover,
-      onPointerMove: _handlePointerMove,
-      onPointerUp: _handlePointerUp,
-      child: InteractiveViewer(
-        transformationController: _transformationController,
-        minScale: 0.1,
-        maxScale: 10,
-        panEnabled: false,
-        scaleEnabled: true,
-        boundaryMargin: const EdgeInsets.all(double.infinity),
-        constrained: false,
-        child: SizedBox(
-          width: widget.size.width,
-          height: widget.size.height,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CustomPaint(
-                painter: LinePainter(controller: widget.controller),
-                size: widget.size,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            // Grid background covering entire viewport
+            Positioned.fill(
+              child: ShaderGrid(
+                size: Size(constraints.maxWidth, constraints.maxHeight),
+                gridSize: 50,
+                lineColor: const Color(0x15000000),
+                backgroundColor: const Color(0xFFFAFAFA),
               ),
-              ...widget.controller.nodes.entries.map((item) {
-                final node = item.value;
-                return Positioned(
-                  top: node.offset.dy,
-                  left: node.offset.dx,
-                  child: NodeBaseWidget(node: node, controller: widget.controller),
-                );
-              }),
-            ],
-          ),
-        ),
-      ),
+            ),
+            // Interactive canvas on top
+            Listener(
+              onPointerDown: _handlePointerDown,
+              onPointerHover: _handlePointerHover,
+              onPointerMove: _handlePointerMove,
+              onPointerUp: _handlePointerUp,
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+                minScale: 0.1,
+                maxScale: 10,
+                panEnabled: false,
+                scaleEnabled: true,
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                constrained: false,
+                child: SizedBox(
+                  width: widget.size.width,
+                  height: widget.size.height,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CustomPaint(
+                        painter: LinePainter(controller: widget.controller),
+                        size: widget.size,
+                      ),
+                      ...widget.controller.nodes.entries.map((item) {
+                        final node = item.value;
+                        return Positioned(
+                          top: node.offset.dy,
+                          left: node.offset.dx,
+                          child: NodeBaseWidget(node: node, controller: widget.controller),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

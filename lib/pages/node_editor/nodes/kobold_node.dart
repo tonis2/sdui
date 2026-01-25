@@ -113,6 +113,7 @@ class KoboldNode extends FormNode {
 
         // Change the modal
         if (formInputs[1].defaultValue != "default" && formInputs[2].defaultValue != "default") {
+          print("Switching kobold model");
           await api.changeConfig(formInputs[2].defaultValue!, formInputs[1].defaultValue!);
         }
 

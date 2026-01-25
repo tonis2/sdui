@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:sdui/config.dart';
+import 'package:sdui/pages/node_editor/nodes/index.dart';
 import '/components/index.dart';
 import '/models/index.dart';
 import '/state.dart';
@@ -215,30 +216,33 @@ class _State extends State<FolderView> {
                       );
                     },
                   ),
-                  InkWell(
-                    child: Tooltip(
-                      message: "Use for inpaint",
-                      child: Icon(Icons.edit, color: Colors.white),
-                    ),
-                    onTap: () async {
-                      // provider.clearImages();
-                      // provider.painterController.setBackground(
-                      //   BackgroundImage(width: image.width, height: image.height, data: image.data, name: image.name),
-                      // );
-                      // provider.imagePrompt.addExtraImage(image.data);
-                      // provider.imagePrompt.addInitImage(image.data);
-                      // provider.imagePrompt.width = image.width;
-                      // provider.imagePrompt.height = image.height;
-                      // provider.imagePrompt.noiseStrenght = 0.95;
-                      context.go(AppRoutes.home);
-                    },
-                  ),
+                  // InkWell(
+                  //   child: Tooltip(
+                  //     message: "Use for inpaint",
+                  //     child: Icon(Icons.edit, color: Colors.white),
+                  //   ),
+                  //   onTap: () async {
+                  //     // provider.clearImages();
+                  //     // provider.painterController.setBackground(
+                  //     //   BackgroundImage(width: image.width, height: image.height, data: image.data, name: image.name),
+                  //     // );
+                  //     // provider.imagePrompt.addExtraImage(image.data);
+                  //     // provider.imagePrompt.addInitImage(image.data);
+                  //     // provider.imagePrompt.width = image.width;
+                  //     // provider.imagePrompt.height = image.height;
+                  //     // provider.imagePrompt.noiseStrenght = 0.95;
+                  //     context.go(AppRoutes.home);
+                  //   },
+                  // ),
                   InkWell(
                     child: Tooltip(
                       message: "Use for prompt",
                       child: Icon(Icons.image, color: Colors.white),
                     ),
                     onTap: () async {
+                      AppState provider = Inherited.of(context)!;
+                      var image = await decodeImageFromList(item.data);
+                      provider.nodeController.addNode(ImageNode(data: item.data, image: image), Offset(100, 100));
                       context.go(AppRoutes.home);
                     },
                   ),

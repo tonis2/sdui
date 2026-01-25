@@ -57,7 +57,7 @@ class FolderNode extends FormNode {
           message: "Add new folder",
           child: InkWell(
             onTap: () => createFolder(context),
-            child: Text("+", style: TextStyle(fontSize: 35), textAlign: .center),
+            child: Icon(Icons.add, color: Colors.black, size: 35),
           ),
         );
       };
@@ -167,5 +167,4 @@ class FolderNode extends FormNode {
 
     return null;
   }
-
 }

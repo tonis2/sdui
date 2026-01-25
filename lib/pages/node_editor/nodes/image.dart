@@ -23,6 +23,8 @@ class ImageNode extends Node {
     super.offset,
     super.uuid,
     super.key,
+    this.data,
+    this.image,
   });
 
   factory ImageNode.fromJson(Map<String, dynamic> json) {
