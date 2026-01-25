@@ -10,6 +10,21 @@
     "orientation": "any",
     "prefer_related_applications": false,
     "id": "/",
+    "screenshots": [
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Desktop view"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "label": "Mobile view"
+        }
+    ],
     "icons": [
         {
             "src": "icons/Icon-192.png",

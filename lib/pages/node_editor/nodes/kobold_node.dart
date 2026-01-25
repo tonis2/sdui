@@ -84,14 +84,18 @@ class KoboldNode extends FormNode {
 
   @override
   Future<void> init(BuildContext context) async {
-    KoboldApi api = KoboldApi(headers: {}, baseUrl: formInputs.first.controller.text);
-    var data = List.from(await api.getConfigs());
-    List<String> configs = ["default", ...data.where((item) => item.contains(".kcpps"))];
-    List<String> models = ["default", ...data.where((item) => !item.contains(".kcpps"))];
+    try {
+      KoboldApi api = KoboldApi(headers: {}, baseUrl: formInputs.first.controller.text);
+      var data = List.from(await api.getConfigs());
+      List<String> configs = ["default", ...data.where((item) => item.contains(".kcpps"))];
+      List<String> models = ["default", ...data.where((item) => !item.contains(".kcpps"))];
 
-    formInputs = [...formInputs];
-    formInputs[1].options = configs;
-    formInputs[2].options = models;
+      formInputs = [...formInputs];
+      formInputs[1].options = configs;
+      formInputs[2].options = models;
+    } catch (err) {
+      debugPrint("could not connect to kobold api");
+    }
 
     return super.init(context);
   }
