@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '/models/index.dart';
-import '/components/node_editor/index.dart';
-import 'image.dart';
+import 'package:node_editor/index.dart';
 
 List<FormInput> defaultFormInputs = [
   FormInput(

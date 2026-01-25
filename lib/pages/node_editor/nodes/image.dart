@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sdui/models/index.dart';
 import 'dart:ui' as ui;
-import '/components/node_editor/index.dart';
+import 'package:node_editor/index.dart';
 
 class ImageNode extends Node {
   @override

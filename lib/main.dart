@@ -94,7 +94,7 @@ Widget queueView(BuildContext context) {
             OutlinedButton(
               onPressed: () {
                 provider.promptQueue.retainWhere((item) => item.endTime == null);
-                provider.update();
+                provider.requestUpdate();
               },
               child: Row(
                 spacing: 15,

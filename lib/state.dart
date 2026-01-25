@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter/material.dart';
-import '/components/index.dart';
 import '/models/index.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'dart:collection';
 import '/pages/node_editor/nodes/index.dart';
+import 'package:node_editor/index.dart';
 
 Uint8List generateEncryptionKey(String password) {
   final salt = utf8.encode('sdui_hive_encryption_salt');
@@ -84,14 +84,18 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  CanvasController painterController = CanvasController(paintColor: Colors.white);
+  // CanvasController painterController = CanvasController(paintColor: Colors.white);
+
+  // I hold nodeController here, so different pages can edit node canvas
   NodeEditorController nodeController = NodeEditorController();
 
   late Box<Folder> folders;
   List<QueueItem> promptQueue = [];
+
+  // Cache for opene folders
   HashMap<String, LazyBox<PromptData>> boxMap = HashMap();
 
-  void update() {
+  void requestUpdate() {
     notifyListeners();
   }
 

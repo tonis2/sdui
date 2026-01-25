@@ -48,6 +48,11 @@ dependencies:
   crypto: ^3.0.6
   web: ^1.1.0
 
+  node_editor:
+    git:
+      url: git@github.com:tonis2/node-editor.git
+      ref: main
+
   vector_math: any
 dev_dependencies:
   flutter_test:

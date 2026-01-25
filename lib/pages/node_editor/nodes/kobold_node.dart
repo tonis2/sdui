@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/models/index.dart';
-import '/components/node_editor/index.dart';
+import 'package:node_editor/index.dart';
 import '/state.dart';
 import 'dart:async';
 
@@ -117,7 +117,7 @@ class KoboldNode extends FormNode {
       try {
         var incomingNodes = editor?.incomingNodes(this, 0) ?? [];
         if (incomingNodes.isEmpty) {
-          throw Exception("No node connected to Prompt input");
+          throw Exception("No node connected to Kobold input");
         }
 
         ImagePrompt prompt = await incomingNodes.first.execute(context, cache);

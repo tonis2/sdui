@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/components/node_editor/index.dart';
+import 'package:node_editor/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';
@@ -171,6 +171,8 @@ class FolderNode extends FormNode {
             mimeType: (result.prompt != null && result.prompt!.frames > 0) ? "gif" : "img",
           ),
         );
+
+        provider.requestUpdate();
       } else {
         debugPrint("Failed to save to folder");
       }
