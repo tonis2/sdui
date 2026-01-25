@@ -88,6 +88,11 @@
         const appRunner = await engineInitializer.initializeEngine();
         await appRunner.runApp();
         document.querySelector(".loader")?.remove();
+
+        // Pre-cache all resources for offline use
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage('downloadOffline');
+        }
       }
     });
   </script>
