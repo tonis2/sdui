@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'dart:collection';
 import '/pages/node_editor/nodes/index.dart';
-import 'package:node_editor/index.dart';
+import 'package:easy_nodes/index.dart';
 
 Uint8List generateEncryptionKey(String password) {
   final salt = utf8.encode('sdui_hive_encryption_salt');

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:node_editor/index.dart';
+import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';

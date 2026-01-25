@@ -47,13 +47,9 @@ dependencies:
   gif_view: ^1.0.3
   crypto: ^3.0.6
   web: ^1.1.0
-
-  node_editor:
-    git:
-      url: git@github.com:tonis2/node-editor.git
-      ref: main
-
   vector_math: any
+  easy_nodes: ^1.0.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

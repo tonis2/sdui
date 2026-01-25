@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/models/index.dart';
-import 'package:node_editor/index.dart';
+import 'package:easy_nodes/index.dart';
 import '/state.dart';
 import 'dart:async';
 

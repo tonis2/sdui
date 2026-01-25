@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:node_editor/index.dart';
+import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:file_saver/file_saver.dart';
