@@ -40,6 +40,8 @@ fi
 sed -i 's|var origin = self.location.origin;|var baseUrl = self.location.href.replace(/flutter_service_worker\\.js$/, "");|g' "$SERVICE_WORKER"
 sed -i 's|event.request.url.substring(origin.length + 1)|event.request.url.substring(baseUrl.length)|g' "$SERVICE_WORKER"
 sed -i 's|request.url.substring(origin.length + 1)|request.url.substring(baseUrl.length)|g' "$SERVICE_WORKER"
+# Add baseUrl to downloadOffline function (it only has local scope in other handlers)
+sed -i '/async function downloadOffline() {/a\  var baseUrl = self.location.href.replace(/flutter_service_worker\\.js$/, "");' "$SERVICE_WORKER"
 # Also fix the root URL check
 sed -i 's|event.request.url == origin|event.request.url == baseUrl.slice(0, -1)|g' "$SERVICE_WORKER"
 sed -i "s|event.request.url.startsWith(origin + '/#')|event.request.url.startsWith(baseUrl + '#')|g" "$SERVICE_WORKER"
