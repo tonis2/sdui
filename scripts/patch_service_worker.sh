@@ -34,6 +34,17 @@ if [ -f "$MANIFEST" ]; then
     fi
 fi
 
+# Fix service worker key calculation for subdirectory deployment
+# The default uses origin.length which breaks when app is in a subdirectory
+# We need to use the service worker's base path instead
+sed -i 's|var origin = self.location.origin;|var baseUrl = self.location.href.replace(/flutter_service_worker\\.js$/, "");|g' "$SERVICE_WORKER"
+sed -i 's|event.request.url.substring(origin.length + 1)|event.request.url.substring(baseUrl.length)|g' "$SERVICE_WORKER"
+sed -i 's|request.url.substring(origin.length + 1)|request.url.substring(baseUrl.length)|g' "$SERVICE_WORKER"
+# Also fix the root URL check
+sed -i 's|event.request.url == origin|event.request.url == baseUrl.slice(0, -1)|g' "$SERVICE_WORKER"
+sed -i "s|event.request.url.startsWith(origin + '/#')|event.request.url.startsWith(baseUrl + '#')|g" "$SERVICE_WORKER"
+echo "Service worker patched for subdirectory URL handling!"
+
 # Add offlineFirst function at the end
 cat >> "$SERVICE_WORKER" << 'OFFLINE_FIRST_FUNC'
 
