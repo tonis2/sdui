@@ -20,6 +20,20 @@ fi
 sed -i 's/return onlineFirst(event);/return offlineFirst(event);/g' "$SERVICE_WORKER"
 sed -i 's/perform an online-first request/perform an offline-first request/g' "$SERVICE_WORKER"
 
+# Fix manifest.json paths for subdirectory deployment (GitHub/GitLab Pages)
+MANIFEST="build/web/manifest.json"
+if [ -f "$MANIFEST" ]; then
+    # Detect base-href from index.html
+    BASE_HREF=$(grep -oP '(?<=<base href=")[^"]+' build/web/index.html || echo "/")
+    if [ "$BASE_HREF" != "/" ]; then
+        echo "Detected base-href: $BASE_HREF"
+        sed -i "s|\"start_url\": \"/\"|\"start_url\": \"$BASE_HREF\"|g" "$MANIFEST"
+        sed -i "s|\"scope\": \"/\"|\"scope\": \"$BASE_HREF\"|g" "$MANIFEST"
+        sed -i "s|\"id\": \"/\"|\"id\": \"$BASE_HREF\"|g" "$MANIFEST"
+        echo "Manifest.json patched for subdirectory deployment!"
+    fi
+fi
+
 # Add offlineFirst function at the end
 cat >> "$SERVICE_WORKER" << 'OFFLINE_FIRST_FUNC'
 
