@@ -3,7 +3,6 @@ import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';
-import 'package:hive_ce/hive.dart';
 
 List<FormInput> _defaultNodes = [
   FormInput(label: "Folders", type: FormInputType.dropdown, width: 300, height: 80, validator: defaultValidator),
@@ -29,6 +28,7 @@ class FolderNode extends FormNode {
     final data = Node.fromJson(json);
     final formInputs =
         (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? _defaultNodes;
+
     return FolderNode(
       label: "Folder",
       size: const Size(400, 200),
@@ -44,6 +44,7 @@ class FolderNode extends FormNode {
   @override
   Map<String, dynamic> toJson() {
     formInputs[0].options = [];
+    formInputs[1].options = [];
     return super.toJson();
   }
 
