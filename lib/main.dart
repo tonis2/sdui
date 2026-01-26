@@ -34,6 +34,8 @@ void main() async {
 Widget queueView(BuildContext context) {
   AppState provider = Inherited.of(context)!;
   ThemeData theme = Theme.of(context);
+  TextStyle? textSyle = theme.textTheme.bodySmall?.copyWith(color: Colors.white);
+
   return Positioned(
     top: 20,
     right: 20,
@@ -69,18 +71,15 @@ Widget queueView(BuildContext context) {
                       mainAxisSize: .min,
                       spacing: 5,
                       children: [
-                        if (item.startTime == null) Text("Item in queue", style: theme.textTheme.bodySmall),
+                        if (item.startTime == null) Text("Item in queue", style: textSyle),
                         if (item.startTime != null)
-                          Text(
-                            "Start time: ${item.startTime.toString().split(" ")[1]}",
-                            style: theme.textTheme.bodySmall,
-                          ),
+                          Text("Start time: ${item.startTime.toString().split(" ")[1]}", style: textSyle),
                         if (item.endTime != null)
-                          Text("End time: ${item.endTime.toString().split(" ")[1]}", style: theme.textTheme.bodySmall),
+                          Text("End time: ${item.endTime.toString().split(" ")[1]}", style: textSyle),
                         if (item.endTime != null && item.startTime != null)
                           Text(
                             "Time spent: ${item.endTime!.difference(item.startTime!).toString().split(".")[0]}",
-                            style: theme.textTheme.bodySmall,
+                            style: textSyle,
                           ),
                       ],
                     ),
@@ -97,7 +96,7 @@ Widget queueView(BuildContext context) {
                 spacing: 15,
                 mainAxisAlignment: .center,
                 children: [
-                  Text("Clear", style: theme.textTheme.bodyMedium),
+                  Text("Clear", style: textSyle),
                   Icon(Icons.delete_forever, color: theme.colorScheme.tertiary),
                 ],
               ),

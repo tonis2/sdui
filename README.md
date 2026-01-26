@@ -19,7 +19,7 @@ You can just install the webapp as PWA app, and it should be working offline.
 Run locally
 
 ```
-flutter run -d chrome --no-web-browser-launch --web-port 8000
+flutter run -d chrome --web-port 8000
 
 flutter run -d web-server --web-port 8000
 ```

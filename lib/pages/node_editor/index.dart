@@ -84,6 +84,7 @@ class _State extends State<NodeEditor> {
   @override
   Widget build(BuildContext context) {
     AppState provider = Inherited.of(context)!;
+    ThemeData theme = Theme.of(context);
     return NodeControls(
       notifier: provider.nodeController,
       child: CallbackShortcuts(
@@ -91,7 +92,12 @@ class _State extends State<NodeEditor> {
         child: Focus(
           autofocus: true,
           child: Scaffold(
-            body: NodeCanvas(controller: provider.nodeController, size: Size(3000, 3000), zoom: 0.5),
+            body: NodeCanvas(
+              controller: provider.nodeController,
+              zoom: 0.5,
+              backgroundColor: Colors.black87,
+              lineColor: const Color.fromARGB(255, 166, 164, 164),
+            ),
             floatingActionButton: Builder(
               builder: (ctx) {
                 return Column(

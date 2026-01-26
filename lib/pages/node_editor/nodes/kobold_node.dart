@@ -37,15 +37,6 @@ List<FormInput> _defaultNodes = [
     options: ["default"],
     validator: defaultValidator,
   ),
-  FormInput(
-    label: "Models",
-    type: FormInputType.dropdown,
-    defaultValue: "default",
-    width: 300,
-    height: 50,
-    options: ["default"],
-    validator: defaultValidator,
-  ),
 ];
 
 class KoboldNode extends FormNode {
@@ -84,8 +75,8 @@ class KoboldNode extends FormNode {
 
   @override
   Map<String, dynamic> toJson() {
-    formInputs[1].options = [];
-    formInputs[2].options = [];
+    // formInputs[1].options = [];
+    // formInputs[2].options = [];
     return super.toJson();
   }
 
@@ -95,11 +86,11 @@ class KoboldNode extends FormNode {
       KoboldApi api = KoboldApi(headers: {}, baseUrl: formInputs.first.controller.text);
       var data = List.from(await api.getConfigs());
       List<String> configs = ["default", ...data.where((item) => item.contains(".kcpps"))];
-      List<String> models = ["default", ...data.where((item) => !item.contains(".kcpps"))];
+      // List<String> models = ["default", ...data.where((item) => !item.contains(".kcpps"))];
 
       formInputs = [...formInputs];
       formInputs[1].options = configs;
-      formInputs[2].options = models;
+      // formInputs[2].options = models;
     } catch (err) {
       debugPrint("could not connect to kobold api");
     }
@@ -123,12 +114,12 @@ class KoboldNode extends FormNode {
         ImagePrompt prompt = await incomingNodes.first.execute(context, cache);
 
         // Change the model and wait for server to restart
-        if (formInputs[1].defaultValue != "default" && formInputs[2].defaultValue != "default") {
+        if (formInputs[1].defaultValue != "default") {
           print("Switching kobold model");
           loading = true;
           editor?.requestUpdate();
 
-          await api.changeConfig(formInputs[2].defaultValue!, formInputs[1].defaultValue!);
+          await api.changeConfig("", formInputs[1].defaultValue!);
           await Future<void>.delayed(const Duration(seconds: 5));
           await waitForServerReady(() => api.getVersion());
 
@@ -153,7 +144,7 @@ class KoboldNode extends FormNode {
   Widget build(BuildContext context) {
     if (loading) {
       return Center(
-        child: SizedBox(width: 50, height: 20, child: CircularProgressIndicator(color: Colors.black)),
+        child: SizedBox(width: 50, height: 50, child: CircularProgressIndicator(color: Colors.black)),
       );
     }
 
@@ -162,7 +153,8 @@ class KoboldNode extends FormNode {
       children: [
         super.build(context),
         Tooltip(
-          message: "Only change Configs/Models from default, when you want kobold to make the change (Takes time)",
+          message: """Only change Configs/Models from default, when you want kobold to make the change (Takes time)
+              Kobold ADMIN api needs to be enabled for this to work!""",
           child: Icon(Icons.info, color: Colors.black),
         ),
       ],

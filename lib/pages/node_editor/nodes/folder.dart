@@ -3,6 +3,7 @@ import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';
+import 'package:hive_ce/hive.dart';
 
 List<FormInput> _defaultNodes = [
   FormInput(label: "Folders", type: FormInputType.dropdown, width: 300, height: 80, validator: defaultValidator),
@@ -73,6 +74,12 @@ class FolderNode extends FormNode {
   Future<void> init(BuildContext context) async {
     await _recreateFolderList(context);
     return super.init(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _recreateFolderList(context);
+    return super.build(context);
   }
 
   void createFolder(BuildContext context) {
@@ -151,6 +158,15 @@ class FolderNode extends FormNode {
 
     for (var node in incomingNodes) {
       PromptResponse result = await node.execute(context, cache);
+
+      // Create default folder
+      // if (formInputs.isEmpty) {
+      //   const folderName = "default";
+      //   provider.folders.add(Folder(name: folderName, encrypted: false));
+      //   var box = await Hive.openLazyBox<PromptData>(folderName);
+      //   provider.boxMap[folderName] = box;
+      //   _recreateFolderList(context);
+      // }
 
       debugPrint("Saving to folder ${formInputs.first.defaultValue}");
 
