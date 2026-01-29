@@ -21,6 +21,7 @@ class _State extends State<NodeEditor> {
 
   @override
   void initState() {
+    super.initState();
     Hive.openBox<Config>('configs').then((box) async {
       AppState provider = Inherited.of(context)!;
       if (provider.nodeController.nodes.isNotEmpty) return;
@@ -35,8 +36,6 @@ class _State extends State<NodeEditor> {
 
       setState(() {});
     });
-
-    super.initState();
   }
 
   Future<void> saveCanvas({bool saveAsFile = false}) async {

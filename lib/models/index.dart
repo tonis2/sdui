@@ -245,7 +245,7 @@ class ImageAdapter extends TypeAdapter<PromptData> {
 
 @immutable
 class QueueItem {
-  final Future<PromptResponse> promptRequest;
+  final Future<dynamic> Function() promptRequest;
   DateTime? endTime;
   DateTime? startTime;
   Uint8List? image;

@@ -12,7 +12,7 @@ class KoboldApi extends Server {
   Future<dynamic> getVersion() => get("/api/extra/version");
   Future<dynamic> getConfigs() => get("/api/admin/list_options").then((value) => value);
   Future<dynamic> changeConfig(String model, String config) =>
-      post("/api/admin/reload_config", {"filename": model, "overrideconfig": config}).then((json) => json);
+      post("/api/admin/reload_config", {"filename": config, "overrideconfig": ""}).then((json) => json);
   Future<PromptResponse> postImageToImage(ImagePrompt prompt) =>
       post("/sdapi/v1/img2img", prompt.toJson()).then((json) => PromptResponse.fromJson(json));
   Future<PromptResponse> postTextToImage(ImagePrompt promp) =>
@@ -75,7 +75,7 @@ class KoboldNode extends FormNode {
 
   @override
   Map<String, dynamic> toJson() {
-    // formInputs[1].options = [];
+    formInputs[1].options = [];
     // formInputs[2].options = [];
     return super.toJson();
   }
@@ -113,24 +113,32 @@ class KoboldNode extends FormNode {
 
         ImagePrompt prompt = await incomingNodes.first.execute(context, cache);
 
+        Future<PromptResponse> response;
+
         // Change the model and wait for server to restart
-        if (formInputs[1].defaultValue != "default") {
-          print("Switching kobold model");
-          loading = true;
-          editor?.requestUpdate();
+        if (formInputs[1].defaultValue != null && formInputs[1].defaultValue != "default") {
+          response = provider.createPromptRequest(prompt, () async {
+            print("Switching kobold model to ${formInputs[1].defaultValue}");
+            loading = true;
+            editor?.requestUpdate();
 
-          await api.changeConfig("", formInputs[1].defaultValue!);
-          await Future<void>.delayed(const Duration(seconds: 5));
-          await waitForServerReady(() => api.getVersion());
+            await api.changeConfig("", formInputs[1].defaultValue!);
+            await Future<void>.delayed(const Duration(seconds: 5));
+            await waitForServerReady(() => api.getVersion());
 
-          loading = false;
-          editor?.requestUpdate();
+            loading = false;
+            editor?.requestUpdate();
+
+            return api.postImageToImage(prompt);
+          });
+        } else {
+          response = provider.createPromptRequest(prompt, () => api.postImageToImage(prompt));
         }
 
-        var response = await provider.createPromptRequest(prompt, api.postImageToImage(prompt));
+        var result = (await response);
         prompt.clearImages();
-        response.prompt = prompt;
-        return response;
+        result.prompt = prompt;
+        return result;
       } catch (err) {
         print(err.toString());
         throw Exception("API execution failed");

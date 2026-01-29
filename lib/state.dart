@@ -106,7 +106,7 @@ class AppState extends ChangeNotifier {
     item.active = true;
     item.startTime = DateTime.now();
 
-    item.promptRequest
+    item.promptRequest()
         .then((response) {
           QueueItem lastPrompt = promptQueue.firstWhere((item) => item.active == true);
 
@@ -127,7 +127,7 @@ class AppState extends ChangeNotifier {
         });
   }
 
-  Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<PromptResponse> request) async {
+  Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<dynamic> Function() request) async {
     // if (painterController.points.isNotEmpty) {
     //   prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
 

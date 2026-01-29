@@ -3,6 +3,7 @@ import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';
+import 'package:hive_ce/hive.dart';
 
 List<FormInput> _defaultNodes = [
   FormInput(label: "Folders", type: FormInputType.dropdown, width: 300, height: 80, validator: defaultValidator),
@@ -44,12 +45,12 @@ class FolderNode extends FormNode {
   @override
   Map<String, dynamic> toJson() {
     formInputs[0].options = [];
-    formInputs[1].options = [];
     return super.toJson();
   }
 
   Future<void> _recreateFolderList(BuildContext context) async {
-    AppState provider = Inherited.of(context)!;
+    AppState? provider = Inherited.of(context);
+    if (provider == null) return;
 
     if (formInputs.isNotEmpty) {
       if (formInputs[0].defaultValue != null) unlockFolder(context, formInputs[0].defaultValue!);
@@ -161,13 +162,13 @@ class FolderNode extends FormNode {
       PromptResponse result = await node.execute(context, cache);
 
       // Create default folder
-      // if (formInputs.isEmpty) {
-      //   const folderName = "default";
-      //   provider.folders.add(Folder(name: folderName, encrypted: false));
-      //   var box = await Hive.openLazyBox<PromptData>(folderName);
-      //   provider.boxMap[folderName] = box;
-      //   _recreateFolderList(context);
-      // }
+      if (provider.folders.isEmpty) {
+        const folderName = "default";
+        provider.folders.add(Folder(name: folderName, encrypted: false));
+        var box = await Hive.openLazyBox<PromptData>(folderName);
+        provider.boxMap[folderName] = box;
+        _recreateFolderList(context);
+      }
 
       debugPrint("Saving to folder ${formInputs.first.defaultValue}");
 
