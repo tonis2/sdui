@@ -123,8 +123,9 @@ class KoboldNode extends FormNode {
             editor?.requestUpdate();
 
             await api.changeConfig("", formInputs[1].defaultValue!);
-            await Future<void>.delayed(const Duration(seconds: 5));
+            await Future<void>.delayed(const Duration(seconds: 3));
             await waitForServerReady(() => api.getVersion());
+            await Future<void>.delayed(const Duration(seconds: 3));
 
             loading = false;
             editor?.requestUpdate();
