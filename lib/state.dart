@@ -8,6 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'dart:collection';
 import '/pages/node_editor/nodes/index.dart';
 import 'package:easy_nodes/index.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Directory, Platform;
 
 Uint8List generateEncryptionKey(String password) {
   final salt = utf8.encode('sdui_hive_encryption_salt');
@@ -34,6 +36,13 @@ class Inherited extends InheritedNotifier<AppState> {
 
 class AppState extends ChangeNotifier {
   AppState() {
+    if (!kIsWeb) {
+      final home = Platform.environment['HOME'] ?? '.';
+      final dir = Directory('$home/.sdui');
+      if (!dir.existsSync()) dir.createSync(recursive: true);
+      Hive.init(dir.path);
+    }
+
     // Register nodes and storage stuff
     Hive.registerAdapter(ImageAdapter());
     Hive.registerAdapter(FolderAdapter());
@@ -67,6 +76,16 @@ class AppState extends ChangeNotifier {
         description: 'Connect to Kobold AI API',
         icon: Icons.smart_toy,
         factory: (json) => KoboldNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: 'HunyuanNode',
+        displayName: 'Hunyuan 3D',
+        description: 'Generate 3D models from images',
+        icon: Icons.view_in_ar,
+        factory: (json) => HunyuanNode.fromJson(json),
       ),
     );
 
@@ -106,7 +125,8 @@ class AppState extends ChangeNotifier {
     item.active = true;
     item.startTime = DateTime.now();
 
-    item.promptRequest()
+    item
+        .promptRequest()
         .then((response) {
           QueueItem lastPrompt = promptQueue.firstWhere((item) => item.active == true);
 
