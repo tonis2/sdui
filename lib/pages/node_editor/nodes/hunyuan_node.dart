@@ -181,7 +181,6 @@ class HunyuanNode extends FormNode {
       final result = await api.queryJob(jobId);
       final status = result['Status'] as String?;
 
-
       if (status == 'DONE' || status == 'done') {
         final files = result['ResultFile3Ds'] as List<dynamic>?;
 

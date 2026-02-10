@@ -9,7 +9,7 @@ import 'dart:collection';
 import '/pages/node_editor/nodes/index.dart';
 import 'package:easy_nodes/index.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Directory, Platform;
+import 'dart:io' show Directory, File, Platform;
 
 Uint8List generateEncryptionKey(String password) {
   final salt = utf8.encode('sdui_hive_encryption_salt');
@@ -98,6 +98,8 @@ class AppState extends ChangeNotifier {
         factory: (json) => FolderNode.fromJson(json),
       ),
     );
+    if (!kIsWeb) _loadDynamicNodes();
+
     Hive.openBox<Folder>('folders').then((box) {
       folders = box;
     });
@@ -113,6 +115,60 @@ class AppState extends ChangeNotifier {
 
   // Cache for opene folders
   HashMap<String, LazyBox<PromptData>> boxMap = HashMap();
+
+  void _loadDynamicNodes() {
+    final home = Platform.environment['HOME'] ?? '.';
+    final dir = Directory('$home/.sdui/nodes');
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+      return;
+    }
+
+    for (final file in dir.listSync().whereType<File>().where((f) => f.path.endsWith('.json'))) {
+      try {
+        final config = NodeConfig.fromJson(jsonDecode(file.readAsStringSync()));
+        nodeController.registerNodeType(
+          NodeTypeMetadata(
+            typeName: config.typeName,
+            displayName: config.displayName,
+            description: config.description ?? '',
+            icon: iconMap[config.icon] ?? Icons.extension,
+            factory: (json) => DynamicNode.fromJson(json, config),
+          ),
+        );
+      } catch (e) {
+        debugPrint('Failed to load dynamic node from ${file.path}: $e');
+      }
+    }
+  }
+
+  /// Register a dynamic node config on-the-fly and save it to ~/.sdui/nodes/.
+  /// Skips if a node with the same typeName is already registered.
+  void registerDynamicNodeConfig(NodeConfig config) {
+    if (nodeController.getNodeMetadata(config.typeName) != null) return;
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
+        typeName: config.typeName,
+        displayName: config.displayName,
+        description: config.description ?? '',
+        icon: iconMap[config.icon] ?? Icons.extension,
+        factory: (json) => DynamicNode.fromJson(json, config),
+      ),
+    );
+
+    // Persist to disk so it's available on next startup
+    if (!kIsWeb) {
+      try {
+        final home = Platform.environment['HOME'] ?? '.';
+        final dir = Directory('$home/.sdui/nodes');
+        if (!dir.existsSync()) dir.createSync(recursive: true);
+        File('${dir.path}/${config.typeName}.json').writeAsStringSync(jsonEncode(config.toJson()));
+      } catch (e) {
+        debugPrint('Failed to save dynamic node config ${config.typeName}: $e');
+      }
+    }
+  }
 
   void requestUpdate() {
     notifyListeners();

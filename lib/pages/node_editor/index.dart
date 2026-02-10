@@ -7,7 +7,9 @@ import 'package:file_saver/file_saver.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle, LogicalKeyboardKey;
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import '/state.dart';
+import '/pages/node_editor/nodes/index.dart';
 
 class NodeEditor extends StatefulWidget {
   const NodeEditor({super.key});
@@ -29,19 +31,50 @@ class _State extends State<NodeEditor> {
       var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
       var configs = box.values.where((item) => item.name == "default");
       if (configs.isNotEmpty) {
-        await provider.nodeController.fromJson(jsonDecode(configs.first.data), context);
+        await _loadCanvasData(provider, jsonDecode(configs.first.data));
       } else {
-        await provider.nodeController.fromJson(jsonDecode(defaultConfig), context);
+        await _loadCanvasData(provider, jsonDecode(defaultConfig));
       }
 
       setState(() {});
     });
   }
 
+  /// Shared loader: registers embedded dynamic node configs, then loads the canvas.
+  Future<void> _loadCanvasData(AppState provider, Map<String, dynamic> json) async {
+    final dynamicNodes = json['dynamicNodes'] as List<dynamic>?;
+    if (dynamicNodes != null) {
+      for (final configJson in dynamicNodes) {
+        try {
+          final config = NodeConfig.fromJson(configJson);
+          provider.registerDynamicNodeConfig(config);
+        } catch (e) {
+          debugPrint('Failed to register embedded dynamic node: $e');
+        }
+      }
+    }
+    await provider.nodeController.fromJson(json, context);
+  }
+
   Future<void> saveCanvas({bool saveAsFile = false}) async {
     AppState provider = Inherited.of(context)!;
     Box<Config> configs = await Hive.openBox<Config>('configs');
-    var data = jsonEncode(provider.nodeController.toJson());
+
+    final canvasJson = provider.nodeController.toJson();
+
+    // Embed dynamic node configs used on the canvas
+    final dynamicConfigs = <Map<String, dynamic>>[];
+    final seen = <String>{};
+    for (final node in provider.nodeController.nodes.values) {
+      if (node is DynamicNode && seen.add(node.config.typeName)) {
+        dynamicConfigs.add(node.config.toJson());
+      }
+    }
+    if (dynamicConfigs.isNotEmpty) {
+      canvasJson['dynamicNodes'] = dynamicConfigs;
+    }
+
+    var data = jsonEncode(canvasJson);
 
     if (configs.isNotEmpty) {
       configs.putAt(0, Config(name: "default", data: data));
@@ -70,13 +103,58 @@ class _State extends State<NodeEditor> {
       try {
         PlatformFile file = result.files.first;
         String data = String.fromCharCodes(file.bytes!);
-        await provider.nodeController.fromJson(jsonDecode(data), context);
+        await _loadCanvasData(provider, jsonDecode(data));
       } catch (err) {
         print("failed to load config ${err.toString()}");
       }
     } else {
       print("canceled");
       // User canceled the picker
+    }
+  }
+
+  Future<void> loadFromUrl() async {
+    AppState provider = Inherited.of(context)!;
+    final urlController = TextEditingController();
+
+    final url = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Load config from URL'),
+        content: TextField(
+          controller: urlController,
+          decoration: const InputDecoration(
+            hintText: 'https://example.com/config.json',
+            labelText: 'URL',
+          ),
+          autofocus: true,
+          onSubmitted: (value) => Navigator.of(ctx).pop(value),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(urlController.text), child: const Text('Load')),
+        ],
+      ),
+    );
+
+    if (url == null || url.trim().isEmpty) return;
+
+    setState(() => loading = true);
+    try {
+      final response = await http.get(Uri.parse(url.trim()));
+      if (response.statusCode != 200) {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      await _loadCanvasData(provider, json);
+    } catch (err) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load: $err')),
+        );
+      }
+    } finally {
+      setState(() => loading = false);
     }
   }
 
@@ -91,11 +169,16 @@ class _State extends State<NodeEditor> {
         child: Focus(
           autofocus: true,
           child: Scaffold(
-            body: NodeCanvas(
-              controller: provider.nodeController,
-              zoom: 0.5,
-              backgroundColor: Colors.black87,
-              lineColor: const Color.fromARGB(255, 166, 164, 164),
+            body: Stack(
+              children: [
+                NodeCanvas(
+                  controller: provider.nodeController,
+                  zoom: 0.5,
+                  backgroundColor: Colors.black87,
+                  lineColor: const Color.fromARGB(255, 166, 164, 164),
+                ),
+                if (loading) const Center(child: CircularProgressIndicator()),
+              ],
             ),
             floatingActionButton: Builder(
               builder: (ctx) {
@@ -114,6 +197,7 @@ class _State extends State<NodeEditor> {
                       child: Icon(Icons.save),
                     ),
                     FloatingActionButton(heroTag: "load", onPressed: loadConfig, child: Icon(Icons.folder_open)),
+                    FloatingActionButton(heroTag: "url", onPressed: loadFromUrl, child: Icon(Icons.link)),
                   ],
                 );
               },
