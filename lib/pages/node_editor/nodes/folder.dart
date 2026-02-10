@@ -56,11 +56,18 @@ class FolderNode extends FormNode {
       if (formInputs[0].defaultValue != null) unlockFolder(context, formInputs[0].defaultValue!);
     }
 
+    final folderNames = provider.folders.values.map((value) => value.name).toList();
+
+    // Clear defaultValue if it doesn't match any existing folder
+    if (formInputs[0].defaultValue != null && !folderNames.contains(formInputs[0].defaultValue)) {
+      formInputs[0].defaultValue = folderNames.isNotEmpty ? folderNames.first : null;
+    }
+
     formInputs[0]
       ..callback = (value) {
         unlockFolder(context, value);
       }
-      ..options = provider.folders.values.map((value) => value.name).toList()
+      ..options = folderNames
       ..suffix = (context) {
         return Tooltip(
           message: "Add new folder",

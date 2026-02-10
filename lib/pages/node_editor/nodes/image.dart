@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sdui/models/index.dart';
@@ -54,8 +55,10 @@ class ImageNode extends Node {
 
     if (result != null) {
       PlatformFile file = result.files.first;
-      image = await decodeImageFromList(file.bytes!);
-      data = file.bytes!;
+      final bytes = file.bytes ?? (file.path != null ? await File(file.path!).readAsBytes() : null);
+      if (bytes == null) return;
+      image = await decodeImageFromList(bytes);
+      data = bytes;
       provider?.requestUpdate();
     } else {
       print("canceled");
