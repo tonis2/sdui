@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '/models/index.dart';
 import 'package:easy_nodes/index.dart';
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import '/state.dart';
 
 const _host = 'hunyuan.intl.tencentcloudapi.com';
 const _apiVersion = '2023-09-01';
@@ -108,7 +108,7 @@ List<FormInput> _defaultFormInputs = [
     defaultValue: "Normal",
     options: ["Normal", "LowPoly", "Geometry", "Sketch"],
   ),
-  FormInput(label: "FaceCount", type: FormInputType.int, width: 150, height: 60, defaultValue: "500000"),
+  FormInput(label: "FaceCount", type: FormInputType.int, width: 150, height: 60, defaultValue: "250000"),
   FormInput(
     label: "EnablePBR",
     type: FormInputType.dropdown,
@@ -130,9 +130,6 @@ List<FormInput> _defaultFormInputs = [
 class HunyuanNode extends FormNode {
   @override
   String get typeName => 'HunyuanNode';
-
-  bool loading = false;
-  String statusText = '';
 
   HunyuanNode({
     super.color = Colors.deepPurpleAccent,
@@ -163,129 +160,91 @@ class HunyuanNode extends FormNode {
     );
   }
 
+  Future<PromptResponse> _executeJob(HunyuanApi api, String imageBase64) async {
+    final generateType = formInputs[2].defaultValue;
+    final faceCount = int.tryParse(formInputs[3].controller.text);
+    final enablePBR = formInputs[4].defaultValue == "true" ? true : null;
+    final polygonType = formInputs[5].defaultValue;
+
+    final jobId = await api.submitJob(
+      imageBase64: imageBase64,
+      generateType: generateType != "Normal" ? generateType : null,
+      faceCount: faceCount,
+      enablePBR: enablePBR,
+      polygonType: polygonType != "triangle" ? polygonType : null,
+    );
+
+    // Poll for results
+    while (true) {
+      await Future.delayed(const Duration(seconds: 5));
+
+      final result = await api.queryJob(jobId);
+      final status = result['Status'] as String?;
+
+
+      if (status == 'DONE' || status == 'done') {
+        final files = result['ResultFile3Ds'] as List<dynamic>?;
+
+        final client = http.Client();
+        final images = <Uint8List>[];
+        String? glbFileName;
+
+        if (files != null) {
+          for (final file in files) {
+            final fileMap = file as Map<String, dynamic>;
+            final previewUrl = fileMap['PreviewImageUrl'] as String?;
+            final modelUrl = fileMap['Url'] as String?;
+
+            // Download preview image
+            if (previewUrl != null && previewUrl.isNotEmpty && images.isEmpty) {
+              final previewResponse = await client.get(Uri.parse(previewUrl));
+              images.add(Uint8List.fromList(previewResponse.bodyBytes));
+            }
+
+            // Download 3D model file
+            if (modelUrl != null && modelUrl.isNotEmpty) {
+              final modelResponse = await client.get(Uri.parse(modelUrl));
+              images.add(Uint8List.fromList(modelResponse.bodyBytes));
+              glbFileName ??= Uri.parse(modelUrl).pathSegments.lastOrNull ?? 'model.glb';
+            }
+          }
+        }
+
+        client.close();
+
+        if (images.isEmpty) {
+          throw Exception("No results returned from Hunyuan API");
+        }
+
+        return PromptResponse(images: images, info: glbFileName);
+      } else if (status == 'FAIL' || status == 'fail') {
+        final errorMsg = result['ErrorMessage'] as String? ?? 'Job failed';
+        throw Exception('Hunyuan job failed: $errorMsg');
+      }
+    }
+  }
+
   @override
   Future<PromptResponse> run(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? editor = NodeControls.of(context);
+    AppState provider = Inherited.of(context)!;
 
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       final api = HunyuanApi(secretId: formInputs[0].controller.text, secretKey: formInputs[1].controller.text);
 
-      try {
-        var incomingNodes = editor?.incomingNodes(this, 0) ?? [];
-        if (incomingNodes.isEmpty) {
-          throw Exception("No node connected to Hunyuan input");
-        }
-
-        PromptResponse upstream = await incomingNodes.first.execute(context, cache);
-        final imageBase64 = base64Encode(upstream.images.first);
-
-        loading = true;
-        statusText = 'Submitting job...';
-        editor?.requestUpdate();
-
-        final generateType = formInputs[2].defaultValue;
-        final faceCount = int.tryParse(formInputs[3].controller.text);
-        final enablePBR = formInputs[4].defaultValue == "true" ? true : null;
-        final polygonType = formInputs[5].defaultValue;
-
-        final jobId = await api.submitJob(
-          imageBase64: imageBase64,
-          generateType: generateType != "Normal" ? generateType : null,
-          faceCount: faceCount != 500000 ? faceCount : null,
-          enablePBR: enablePBR,
-          polygonType: polygonType != "triangle" ? polygonType : null,
-        );
-
-        statusText = 'Job submitted, waiting...';
-        editor?.requestUpdate();
-
-        // Poll for results
-        while (true) {
-          await Future.delayed(const Duration(seconds: 5));
-
-          final result = await api.queryJob(jobId);
-          final status = result['Status'] as String?;
-
-          debugPrint('Hunyuan query response: $result');
-
-          if (status == 'DONE' || status == 'done') {
-            loading = false;
-            statusText = '';
-            editor?.requestUpdate();
-
-            final files = result['ResultFile3Ds'] as List<dynamic>?;
-
-            final client = http.Client();
-            final images = <Uint8List>[];
-            String? glbFileName;
-
-            if (files != null) {
-              for (final file in files) {
-                final fileMap = file as Map<String, dynamic>;
-                final previewUrl = fileMap['PreviewImageUrl'] as String?;
-                final modelUrl = fileMap['Url'] as String?;
-
-                // Download preview image
-                if (previewUrl != null && previewUrl.isNotEmpty && images.isEmpty) {
-                  final previewResponse = await client.get(Uri.parse(previewUrl));
-                  images.add(Uint8List.fromList(previewResponse.bodyBytes));
-                }
-
-                // Download 3D model file
-                if (modelUrl != null && modelUrl.isNotEmpty) {
-                  final modelResponse = await client.get(Uri.parse(modelUrl));
-                  images.add(Uint8List.fromList(modelResponse.bodyBytes));
-                  glbFileName ??= Uri.parse(modelUrl).pathSegments.lastOrNull ?? 'model.glb';
-                }
-              }
-            }
-
-            client.close();
-
-            if (images.isEmpty) {
-              throw Exception("No results returned from Hunyuan API");
-            }
-
-            return PromptResponse(images: images, info: glbFileName);
-          } else if (status == 'FAIL' || status == 'fail') {
-            loading = false;
-            statusText = '';
-            editor?.requestUpdate();
-
-            final errorMsg = result['ErrorMsg'] as String? ?? 'Job failed';
-            throw Exception('Hunyuan job failed: $errorMsg');
-          }
-
-          statusText = 'Status: $status';
-          editor?.requestUpdate();
-        }
-      } catch (err) {
-        loading = false;
-        statusText = '';
-        editor?.requestUpdate();
-        debugPrint(err.toString());
-        rethrow;
+      var incomingNodes = editor?.incomingNodes(this, 0) ?? [];
+      if (incomingNodes.isEmpty) {
+        throw Exception("No node connected to Hunyuan input");
       }
+
+      PromptResponse upstream = await incomingNodes.first.execute(context, cache);
+      final imageBase64 = base64Encode(upstream.images.first);
+
+      provider.enqueueRequest(() => _executeJob(api, imageBase64), image: upstream.images.first);
+
+      return PromptResponse(images: [upstream.images.first]);
     }
 
     throw Exception("Form validation failed");
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 12,
-          children: [
-            SizedBox(width: 50, height: 50, child: CircularProgressIndicator(color: Colors.black)),
-            Text(statusText, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      );
-    }
-
-    return super.build(context);
   }
 }

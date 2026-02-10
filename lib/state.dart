@@ -148,17 +148,6 @@ class AppState extends ChangeNotifier {
   }
 
   Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<dynamic> Function() request) async {
-    // if (painterController.points.isNotEmpty) {
-    //   prompt.mask = await painterController.getMaskImage(Size(prompt.width.toDouble(), prompt.height.toDouble()));
-
-    //   // Save mask for debugging
-    //   // await FileSaver.instance.saveFile(
-    //   //   name: "default",
-    //   //   mimeType: MimeType.png,
-    //   //   bytes: provider.imagePrompt.extraImages.first,
-    //   // );
-    // }
-
     var completer = Completer<PromptResponse>();
     var queue = QueueItem(response: completer, image: prompt.extraImages.firstOrNull, promptRequest: request);
 
@@ -167,5 +156,33 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     return await completer.future;
+  }
+
+  /// Enqueue a request without requiring an ImagePrompt.
+  /// Runs concurrently (does not wait for other queue items to finish).
+  Future<PromptResponse> enqueueRequest(Future<PromptResponse> Function() request, {Uint8List? image}) async {
+    var completer = Completer<PromptResponse>();
+    var queue = QueueItem(response: completer, image: image, promptRequest: request);
+
+    promptQueue.add(queue);
+
+    // Start immediately (concurrent)
+    queue.active = true;
+    queue.startTime = DateTime.now();
+    notifyListeners();
+
+    request().then((response) {
+      queue.endTime = DateTime.now();
+      queue.active = false;
+      completer.complete(response);
+      notifyListeners();
+    }).catchError((err) {
+      queue.endTime = DateTime.now();
+      queue.active = false;
+      completer.completeError(err);
+      notifyListeners();
+    });
+
+    return completer.future;
   }
 }
