@@ -186,7 +186,7 @@ class FolderNode extends FormNode {
         result.prompt?.clearImages();
 
         // Add data to local storage
-        box.add(
+        await box.add(
           PromptData(
             width: result.prompt?.width,
             height: result.prompt?.height,
