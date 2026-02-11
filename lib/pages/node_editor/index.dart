@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import 'package:hive_ce/hive_ce.dart';
-import 'package:file_saver/file_saver.dart';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle, LogicalKeyboardKey;
 import 'package:file_picker/file_picker.dart';
@@ -83,11 +83,13 @@ class _State extends State<NodeEditor> {
     }
 
     if (saveAsFile) {
-      await FileSaver.instance.saveFile(
-        name: "sdconfig.json",
-        mimeType: MimeType.png,
-        bytes: Uint8List.fromList(data.codeUnits),
+      String? path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save config',
+        fileName: 'sdconfig.json',
       );
+      if (path != null) {
+        await File(path).writeAsBytes(Uint8List.fromList(data.codeUnits));
+      }
     }
   }
 

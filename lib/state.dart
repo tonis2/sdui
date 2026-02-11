@@ -112,6 +112,7 @@ class AppState extends ChangeNotifier {
 
   late Box<Folder> folders;
   List<QueueItem> promptQueue = [];
+  bool queueExpanded = true;
 
   // Cache for opene folders
   HashMap<String, LazyBox<PromptData>> boxMap = HashMap();

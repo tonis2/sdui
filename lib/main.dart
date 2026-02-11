@@ -42,52 +42,77 @@ Widget queueView(BuildContext context) {
     right: 20,
     child: Container(
       width: 300,
-      height: 600,
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(color: const Color.fromRGBO(212, 212, 212, 0.5)),
-      child: SingleChildScrollView(
-        child: Column(
-          spacing: 10,
-          mainAxisSize: .min,
-          mainAxisAlignment: .start,
-          crossAxisAlignment: .start,
-          children: [
-            ...provider.promptQueue.map((item) {
-              MemoryImage? image;
-
-              if (item.image != null) {
-                image = MemoryImage(item.image!);
-              }
-
-              return SizedBox(
-                width: 350,
-                child: Row(
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          Row(
+            mainAxisAlignment: .spaceBetween,
+            children: [
+              Text("Queue (${provider.promptQueue.length})", style: textSyle),
+              IconButton(
+                onPressed: () {
+                  provider.queueExpanded = !provider.queueExpanded;
+                  provider.requestUpdate();
+                },
+                icon: Icon(
+                  provider.queueExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          if (provider.queueExpanded) ...[
+            SizedBox(
+              height: 500,
+              child: SingleChildScrollView(
+                child: Column(
+                  spacing: 10,
                   mainAxisSize: .min,
                   mainAxisAlignment: .start,
                   crossAxisAlignment: .start,
-                  spacing: 10,
                   children: [
-                    if (image != null) Image(image: ResizeImage(image, width: 60, height: 60)),
-                    Column(
-                      mainAxisSize: .min,
-                      spacing: 5,
-                      children: [
-                        if (item.startTime == null) Text("Item in queue", style: textSyle),
-                        if (item.startTime != null)
-                          Text("Start time: ${item.startTime.toString().split(" ")[1]}", style: textSyle),
-                        if (item.endTime != null)
-                          Text("End time: ${item.endTime.toString().split(" ")[1]}", style: textSyle),
-                        if (item.endTime != null && item.startTime != null)
-                          Text(
-                            "Time spent: ${item.endTime!.difference(item.startTime!).toString().split(".")[0]}",
-                            style: textSyle,
-                          ),
-                      ],
-                    ),
+                    ...provider.promptQueue.map((item) {
+                      MemoryImage? image;
+
+                      if (item.image != null) {
+                        image = MemoryImage(item.image!);
+                      }
+
+                      return SizedBox(
+                        width: 350,
+                        child: Row(
+                          mainAxisSize: .min,
+                          mainAxisAlignment: .start,
+                          crossAxisAlignment: .start,
+                          spacing: 10,
+                          children: [
+                            if (image != null) Image(image: ResizeImage(image, width: 60, height: 60)),
+                            Column(
+                              mainAxisSize: .min,
+                              spacing: 5,
+                              children: [
+                                if (item.startTime == null) Text("Item in queue", style: textSyle),
+                                if (item.startTime != null)
+                                  Text("Start time: ${item.startTime.toString().split(" ")[1]}", style: textSyle),
+                                if (item.endTime != null)
+                                  Text("End time: ${item.endTime.toString().split(" ")[1]}", style: textSyle),
+                                if (item.endTime != null && item.startTime != null)
+                                  Text(
+                                    "Time spent: ${item.endTime!.difference(item.startTime!).toString().split(".")[0]}",
+                                    style: textSyle,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
-              );
-            }),
+              ),
+            ),
             OutlinedButton(
               onPressed: () {
                 provider.promptQueue.retainWhere((item) => item.endTime == null);
@@ -97,13 +122,27 @@ Widget queueView(BuildContext context) {
                 spacing: 15,
                 mainAxisAlignment: .center,
                 children: [
-                  Text("Clear", style: textSyle),
+                  Text("Clear done", style: textSyle),
+                  Icon(Icons.done_all, color: theme.colorScheme.tertiary),
+                ],
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () {
+                provider.promptQueue.clear();
+                provider.requestUpdate();
+              },
+              child: Row(
+                spacing: 15,
+                mainAxisAlignment: .center,
+                children: [
+                  Text("Clear all", style: textSyle),
                   Icon(Icons.delete_forever, color: theme.colorScheme.tertiary),
                 ],
               ),
             ),
           ],
-        ),
+        ],
       ),
     ),
   );

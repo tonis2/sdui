@@ -8,7 +8,8 @@ import '/models/index.dart';
 import '/state.dart';
 import 'package:swipe_image_gallery/swipe_image_gallery.dart';
 import 'package:responsive_grid_list/responsive_grid_list.dart';
-import 'package:file_saver/file_saver.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import 'dart:math';
 import 'package:gif_view/gif_view.dart';
 
@@ -225,11 +226,13 @@ class _State extends State<FolderView> {
                     child: Icon(Icons.save, color: Colors.white),
                   ),
                   onTap: () async {
-                    await FileSaver.instance.saveFile(
-                      name: item.name ?? "default",
-                      mimeType: MimeType.png,
-                      bytes: item.data,
+                    String? path = await FilePicker.platform.saveFile(
+                      dialogTitle: 'Save image',
+                      fileName: '${item.name ?? "default"}.png',
                     );
+                    if (path != null) {
+                      await File(path).writeAsBytes(item.data);
+                    }
                   },
                 ),
                 InkWell(
@@ -282,12 +285,13 @@ class _State extends State<FolderView> {
                     child: Icon(Icons.save, color: Colors.white),
                   ),
                   onTap: () async {
-                    await FileSaver.instance.saveFile(
-                      name: item.name ?? "default",
-                      mimeType: MimeType.custom,
-                      fileExtension: ".gif",
-                      bytes: item.data,
+                    String? path = await FilePicker.platform.saveFile(
+                      dialogTitle: 'Save image',
+                      fileName: '${item.name ?? "default"}.gif',
                     );
+                    if (path != null) {
+                      await File(path).writeAsBytes(item.data);
+                    }
                   },
                 ),
               ],
