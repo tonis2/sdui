@@ -181,6 +181,7 @@ class _State extends State<FolderView> {
                               children: [
                                 Text("Steps: ${item.prompt?.steps},", style: textStyle),
                                 Text("Sampler: ${item.prompt?.sampler},", style: textStyle),
+                                Text("Denoise: ${item.prompt?.noiseStrenght},", style: textStyle),
                                 Text("Width: ${item.prompt?.width}, Height: ${item.prompt?.height}", style: textStyle),
                               ],
                             ),
