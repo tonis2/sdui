@@ -182,15 +182,32 @@ class FolderNode extends FormNode {
       var box = provider.boxMap[formInputs.first.defaultValue];
 
       if (box != null) {
-        // Dont save image data to local storage twice
-        result.prompt?.clearImages();
+        // Create a clean copy of the prompt to avoid mutating the cached result
+        ImagePrompt? savedPrompt;
+        if (result.prompt != null) {
+          savedPrompt = ImagePrompt(
+            prompt: result.prompt!.prompt,
+            negativePrompt: result.prompt!.negativePrompt,
+            steps: result.prompt!.steps,
+            width: result.prompt!.width,
+            height: result.prompt!.height,
+            seed: result.prompt!.seed,
+            clipSkip: result.prompt!.clipSkip,
+            guidance: result.prompt!.guidance,
+            noiseStrenght: result.prompt!.noiseStrenght,
+            sampler: result.prompt!.sampler,
+            scheduler: result.prompt!.scheduler,
+            frames: result.prompt!.frames,
+            maskInvert: result.prompt!.maskInvert,
+          );
+        }
 
         // Add data to local storage
         await box.add(
           PromptData(
-            width: result.prompt?.width,
-            height: result.prompt?.height,
-            prompt: result.prompt,
+            width: savedPrompt?.width,
+            height: savedPrompt?.height,
+            prompt: savedPrompt,
             data: result.images.first,
             name: result.info,
             mimeType: (result.prompt != null && result.prompt!.frames > 0) ? "gif" : "img",

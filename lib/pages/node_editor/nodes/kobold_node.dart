@@ -137,8 +137,22 @@ class KoboldNode extends FormNode {
         }
 
         var result = (await response);
-        prompt.clearImages();
-        result.prompt = prompt;
+        // Create a clean copy to avoid mutating the cached prompt
+        result.prompt = ImagePrompt(
+          prompt: prompt.prompt,
+          negativePrompt: prompt.negativePrompt,
+          steps: prompt.steps,
+          width: prompt.width,
+          height: prompt.height,
+          seed: prompt.seed,
+          clipSkip: prompt.clipSkip,
+          guidance: prompt.guidance,
+          noiseStrenght: prompt.noiseStrenght,
+          sampler: prompt.sampler,
+          scheduler: prompt.scheduler,
+          frames: prompt.frames,
+          maskInvert: prompt.maskInvert,
+        );
         return result;
       } catch (err) {
         print(err.toString());
