@@ -11,7 +11,6 @@ import 'package:responsive_grid_list/responsive_grid_list.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'dart:math';
-import 'package:gif_view/gif_view.dart';
 
 Future<void> showPasswordDialog(BuildContext context, String folder) async {
   ThemeData theme = Theme.of(context);
@@ -100,11 +99,23 @@ class FolderView extends StatefulWidget {
 class _State extends State<FolderView> {
   List<PromptData> data = [];
   int activePage = 1;
+  int _lastKnownBoxLength = 0;
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) => loadContent(1));
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if the box has new items since last load
+    AppState provider = Inherited.of(context)!;
+    LazyBox<PromptData>? box = provider.boxMap[widget.path];
+    if (box != null && box.length != _lastKnownBoxLength && _lastKnownBoxLength > 0) {
+      loadContent(activePage);
+    }
   }
 
   void loadContent(int page) async {
@@ -137,6 +148,7 @@ class _State extends State<FolderView> {
       }
     }
 
+    _lastKnownBoxLength = box?.length ?? 0;
     setState(() {});
   }
 
@@ -163,10 +175,7 @@ class _State extends State<FolderView> {
                 height: size.height,
                 child: Stack(
                   children: [
-                    Align(
-                      alignment: .center,
-                      child: image.mimeType == "gif" ? GifView.memory(item.data) : Image.memory(item.data),
-                    ),
+                    Align(alignment: .center, child: Image.memory(item.data)),
                     if (item.prompt != null)
                       Align(
                         alignment: .bottomCenter,
@@ -259,7 +268,7 @@ class _State extends State<FolderView> {
   Widget gifView(PromptData item) {
     return Stack(
       children: [
-        GifView.memory(item.data, fit: .contain),
+        Image.memory(item.data),
         Positioned(
           right: 5,
           top: 5,

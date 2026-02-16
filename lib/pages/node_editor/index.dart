@@ -25,6 +25,7 @@ class _State extends State<NodeEditor> {
   void initState() {
     super.initState();
     Hive.openBox<Config>('configs').then((box) async {
+      if (!mounted) return;
       AppState provider = Inherited.of(context)!;
       if (provider.nodeController.nodes.isNotEmpty) return;
 
@@ -36,6 +37,7 @@ class _State extends State<NodeEditor> {
         await _loadCanvasData(provider, jsonDecode(defaultConfig));
       }
 
+      if (!mounted) return;
       setState(() {});
     });
   }
