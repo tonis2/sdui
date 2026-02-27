@@ -347,7 +347,7 @@ class _State extends State<FolderView> {
           if (data.isNotEmpty) galleryView(),
           if (box != null && box.length > itemsOnPage)
             Container(
-              width: 545,
+              width: 700,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
                 activePage: activePage,

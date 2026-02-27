@@ -110,7 +110,7 @@ class _State extends State<Folders> {
           if (folders.isNotEmpty) foldersList(),
           if (provider.folders.length > itemsOnPage)
             Container(
-              width: 545,
+              width: 700,
               padding: EdgeInsetsGeometry.only(top: 10, bottom: 10),
               child: Pagination(
                 activePage: activePage,
