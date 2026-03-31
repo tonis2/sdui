@@ -3,7 +3,6 @@ import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
 import '/state.dart';
 import '/pages/folder.dart';
-import 'package:hive_ce/hive.dart';
 
 List<FormInput> _defaultNodes = [
   FormInput(label: "Folders", type: FormInputType.dropdown, width: 300, height: 80, validator: defaultValidator),
@@ -172,7 +171,7 @@ class FolderNode extends FormNode {
       if (provider.folders.isEmpty) {
         const folderName = "default";
         provider.folders.add(Folder(name: folderName, encrypted: false));
-        var box = await Hive.openLazyBox<PromptData>(folderName);
+        var box = await provider.openProjectLazyBox<PromptData>(folderName);
         provider.boxMap[folderName] = box;
         _recreateFolderList(context);
       }

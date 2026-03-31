@@ -182,7 +182,7 @@ Widget router(AppState appState) {
           pageBuilder: (context, state) {
             return CustomTransitionPage<void>(
               key: state.pageKey,
-              child: base(NodeEditor(), context),
+              child: base(NodeEditor(key: ValueKey(appState.projectPath)), context),
               transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                   FadeTransition(opacity: animation, child: child),
             );

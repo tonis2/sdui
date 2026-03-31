@@ -35,12 +35,36 @@ class Inherited extends InheritedNotifier<AppState> {
 }
 
 class AppState extends ChangeNotifier {
+  late String _defaultSduiPath;
+  late String _projectPath;
+  Box? _metaBox;
+
+  String get projectPath => _projectPath;
+
+  Future<Box<T>> openProjectBox<T>(String name, {HiveCipher? cipher}) {
+    return Hive.openBox<T>(name, path: _projectPath, encryptionCipher: cipher);
+  }
+
+  Future<LazyBox<T>> openProjectLazyBox<T>(String name, {HiveCipher? cipher}) {
+    return Hive.openLazyBox<T>(name, path: _projectPath, encryptionCipher: cipher);
+  }
+
+  String get nodesDirectory => '$_projectPath/nodes';
+
+  List<String> get recentProjects {
+    final list = _metaBox?.get('recentProjects');
+    if (list == null) return [];
+    return List<String>.from(list);
+  }
+
   AppState() {
     if (!kIsWeb) {
       final home = Platform.environment['HOME'] ?? '.';
-      final dir = Directory('$home/.sdui');
+      _defaultSduiPath = '$home/.sdui';
+      final dir = Directory(_defaultSduiPath);
       if (!dir.existsSync()) dir.createSync(recursive: true);
-      Hive.init(dir.path);
+      Hive.init(_defaultSduiPath);
+      _projectPath = _defaultSduiPath;
     }
 
     // Register nodes and storage stuff
@@ -49,6 +73,14 @@ class AppState extends ChangeNotifier {
     Hive.registerAdapter(ConfigAdapter());
     Hive.registerAdapter(ImagePromptAdapter());
 
+    _registerBuiltinNodeTypes();
+
+    if (!kIsWeb) {
+      _initProject();
+    }
+  }
+
+  void _registerBuiltinNodeTypes() {
     nodeController.registerNodeType(
       NodeTypeMetadata(
         typeName: 'ImageNode',
@@ -98,11 +130,42 @@ class AppState extends ChangeNotifier {
         factory: (json) => FolderNode.fromJson(json),
       ),
     );
-    if (!kIsWeb) _loadDynamicNodes();
+  }
 
-    Hive.openBox<Folder>('folders').then((box) {
-      folders = box;
-    });
+  Future<void> _initProject() async {
+    _metaBox = await Hive.openBox('sdui_meta', path: _defaultSduiPath);
+    final lastProject = _metaBox?.get('lastProject') as String?;
+    if (lastProject != null && Directory(lastProject).existsSync()) {
+      _projectPath = lastProject;
+    }
+    _loadDynamicNodes();
+    folders = await openProjectBox<Folder>('folders');
+    notifyListeners();
+  }
+
+  Future<void> switchProject(String newPath) async {
+    await Hive.close();
+    boxMap.clear();
+    nodeController.clear();
+    _projectPath = newPath;
+
+    final dir = Directory(newPath);
+    if (!dir.existsSync()) dir.createSync(recursive: true);
+    final nodesDir = Directory(nodesDirectory);
+    if (!nodesDir.existsSync()) nodesDir.createSync(recursive: true);
+
+    // Re-open meta box and save project info
+    _metaBox = await Hive.openBox('sdui_meta', path: _defaultSduiPath);
+    _metaBox?.put('lastProject', newPath);
+    final recent = recentProjects;
+    recent.remove(newPath);
+    recent.insert(0, newPath);
+    if (recent.length > 10) recent.removeLast();
+    _metaBox?.put('recentProjects', recent);
+
+    _loadDynamicNodes();
+    folders = await openProjectBox<Folder>('folders');
+    notifyListeners();
   }
 
   // CanvasController painterController = CanvasController(paintColor: Colors.white);
@@ -118,8 +181,7 @@ class AppState extends ChangeNotifier {
   HashMap<String, LazyBox<PromptData>> boxMap = HashMap();
 
   void _loadDynamicNodes() {
-    final home = Platform.environment['HOME'] ?? '.';
-    final dir = Directory('$home/.sdui/nodes');
+    final dir = Directory(nodesDirectory);
     if (!dir.existsSync()) {
       dir.createSync(recursive: true);
       return;
@@ -161,8 +223,7 @@ class AppState extends ChangeNotifier {
     // Persist to disk so it's available on next startup
     if (!kIsWeb) {
       try {
-        final home = Platform.environment['HOME'] ?? '.';
-        final dir = Directory('$home/.sdui/nodes');
+        final dir = Directory(nodesDirectory);
         if (!dir.existsSync()) dir.createSync(recursive: true);
         File('${dir.path}/${config.typeName}.json').writeAsStringSync(jsonEncode(config.toJson()));
       } catch (e) {

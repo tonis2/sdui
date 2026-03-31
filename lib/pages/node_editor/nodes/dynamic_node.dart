@@ -190,12 +190,7 @@ class RequestConfig {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'url': url,
-    'method': method,
-    'headers': headers,
-    if (body != null) 'body': body,
-  };
+  Map<String, dynamic> toJson() => {'url': url, 'method': method, 'headers': headers, if (body != null) 'body': body};
 }
 
 class ResponseConfig {
@@ -351,7 +346,10 @@ class InputConfig {
     return InputConfig(label: json['label'] as String, color: Color(int.parse(json['color'].toString())));
   }
 
-  Map<String, dynamic> toJson() => {'label': label, 'color': '0x${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}'};
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'color': '0x${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+  };
 }
 
 class OutputConfig {
@@ -364,7 +362,10 @@ class OutputConfig {
     return OutputConfig(label: json['label'] as String, color: Color(int.parse(json['color'].toString())));
   }
 
-  Map<String, dynamic> toJson() => {'label': label, 'color': '0x${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}'};
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'color': '0x${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+  };
 }
 
 class NodeConfig {
@@ -475,7 +476,7 @@ class DynamicNode extends FormNode {
       }
     }
 
-    return {'form': formMap, 'input': inputMap, if (jobId != null) 'jobId': jobId};
+    return {'form': formMap, 'input': inputMap, 'jobId': ?jobId};
   }
 
   @override

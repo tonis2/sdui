@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:file_picker/file_picker.dart';
 import '/state.dart';
 import '/config.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +30,51 @@ class _State extends State<Menu> {
     super.initState();
   }
 
+  Widget _projectMenu(BuildContext context, AppState provider, ThemeData theme) {
+    final recent = provider.recentProjects;
+    final currentName = provider.projectPath.split('/').last;
+
+    return Tooltip(
+      message: "Project: $currentName",
+      child: PopupMenuButton<String>(
+        icon: Icon(Icons.folder_special, color: theme.colorScheme.tertiary, size: 25),
+        offset: const Offset(50, 0),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: '_new',
+            child: Text('New Project...', style: TextStyle(color: theme.colorScheme.tertiary)),
+          ),
+          PopupMenuItem(
+            value: '_open',
+            child: Text('Open Project...', style: TextStyle(color: theme.colorScheme.tertiary)),
+          ),
+          if (recent.isNotEmpty) const PopupMenuDivider(),
+          ...recent.map((path) {
+            final name = path.split('/').last;
+            final isCurrent = path == provider.projectPath;
+            return PopupMenuItem(
+              value: path,
+              child: Text(isCurrent ? '* $name' : name, style: TextStyle(color: theme.colorScheme.tertiary)),
+            );
+          }),
+        ],
+        onSelected: (value) async {
+          if (value == '_new' || value == '_open') {
+            final path = await FilePicker.platform.getDirectoryPath(
+              dialogTitle: value == '_new' ? 'Choose location for new project' : 'Open project folder',
+            );
+            if (path == null) return;
+            await provider.switchProject(path);
+            if (context.mounted) context.go(AppRoutes.home);
+          } else {
+            await provider.switchProject(value);
+            if (context.mounted) context.go(AppRoutes.home);
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     AppState provider = Inherited.of(context)!;
@@ -49,6 +96,7 @@ class _State extends State<Menu> {
               ),
             );
           }),
+          if (!kIsWeb) _projectMenu(context, provider, theme),
         ],
       ),
     );

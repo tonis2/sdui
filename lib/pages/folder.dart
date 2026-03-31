@@ -62,9 +62,9 @@ Future<void> showPasswordDialog(BuildContext context, String folder) async {
   try {
     if (response != null && response.toString().isNotEmpty) {
       // User provided password
-      provider.boxMap[folder] = await Hive.openLazyBox<PromptData>(
+      provider.boxMap[folder] = await provider.openProjectLazyBox<PromptData>(
         folder,
-        encryptionCipher: HiveAesCipher(generateEncryptionKey(response.toString())),
+        cipher: HiveAesCipher(generateEncryptionKey(response.toString())),
       );
     }
   } catch (err) {
@@ -82,7 +82,7 @@ void unlockFolder(BuildContext context, String folder) {
   }
 
   if (folders.isNotEmpty && !folders.first.encrypted && provider.boxMap[folder] == null) {
-    Hive.openLazyBox<PromptData>(folder).then((box) {
+    provider.openProjectLazyBox<PromptData>(folder).then((box) {
       provider.boxMap[folder] = box;
     });
   }
@@ -133,7 +133,7 @@ class _State extends State<FolderView> {
       if (folder.encrypted) {
         await showPasswordDialog(context, widget.path);
       } else {
-        provider.boxMap[widget.path] = await Hive.openLazyBox<PromptData>(widget.path);
+        provider.boxMap[widget.path] = await provider.openProjectLazyBox<PromptData>(widget.path);
       }
     }
 

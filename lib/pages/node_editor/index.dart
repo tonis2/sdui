@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle, LogicalKeyboardKey;
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:desktop_drop/desktop_drop.dart';
 import '/state.dart';
 import '/pages/node_editor/nodes/index.dart';
 
@@ -24,9 +25,9 @@ class _State extends State<NodeEditor> {
   @override
   void initState() {
     super.initState();
-    Hive.openBox<Config>('configs').then((box) async {
+    AppState provider = Inherited.of(context)!;
+    provider.openProjectBox<Config>('configs').then((box) async {
       if (!mounted) return;
-      AppState provider = Inherited.of(context)!;
       if (provider.nodeController.nodes.isNotEmpty) return;
 
       var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
@@ -60,7 +61,7 @@ class _State extends State<NodeEditor> {
 
   Future<void> saveCanvas({bool saveAsFile = false}) async {
     AppState provider = Inherited.of(context)!;
-    Box<Config> configs = await Hive.openBox<Config>('configs');
+    Box<Config> configs = await provider.openProjectBox<Config>('configs');
 
     final canvasJson = provider.nodeController.toJson();
 
@@ -162,6 +163,24 @@ class _State extends State<NodeEditor> {
     }
   }
 
+  Future<void> _onImageDropped(DropDoneDetails details) async {
+    final provider = Inherited.of(context)!;
+    const imageExtensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'};
+
+    for (final file in details.files) {
+      final name = file.name.toLowerCase();
+      final ext = name.contains('.') ? '.${name.split('.').last}' : '';
+      if (!imageExtensions.contains(ext)) continue;
+
+      final bytes = await File(file.path).readAsBytes();
+      final image = await decodeImageFromList(bytes);
+      provider.nodeController.addNode(
+        ImageNode(data: bytes, image: image),
+        details.localPosition,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     AppState provider = Inherited.of(context)!;
@@ -173,16 +192,19 @@ class _State extends State<NodeEditor> {
         child: Focus(
           autofocus: true,
           child: Scaffold(
-            body: Stack(
-              children: [
-                NodeCanvas(
-                  controller: provider.nodeController,
-                  zoom: 0.5,
-                  backgroundColor: Colors.black87,
-                  lineColor: const Color.fromARGB(255, 166, 164, 164),
-                ),
-                if (loading) const Center(child: CircularProgressIndicator()),
-              ],
+            body: DropTarget(
+              onDragDone: _onImageDropped,
+              child: Stack(
+                children: [
+                  NodeCanvas(
+                    controller: provider.nodeController,
+                    zoom: 0.5,
+                    backgroundColor: Colors.black87,
+                    lineColor: const Color.fromARGB(255, 166, 164, 164),
+                  ),
+                  if (loading) const Center(child: CircularProgressIndicator()),
+                ],
+              ),
             ),
             floatingActionButton: Builder(
               builder: (ctx) {
