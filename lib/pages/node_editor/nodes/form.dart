@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '/models/index.dart';
 import 'package:easy_nodes/index.dart';
@@ -31,7 +32,7 @@ List<FormInput> defaultFormInputs = [
   ),
   FormInput(label: "Width", type: FormInputType.range, defaultValue: "1024", width: 220),
   FormInput(label: "Height", type: FormInputType.range, defaultValue: "1024", width: 220),
-  FormInput(label: "Seed", type: FormInputType.int, defaultValue: "-1"),
+  FormInput(label: "Seed", type: FormInputType.text, defaultValue: "-1"),
   FormInput(label: "Steps", type: FormInputType.int, defaultValue: "8"),
   FormInput(label: "Guidance", type: FormInputType.double, defaultValue: "1"),
   FormInput(label: "Denoise", type: FormInputType.double, defaultValue: "0.3"),
@@ -76,6 +77,26 @@ class PromptNode extends FormNode {
       uuid: data.uuid,
       customFormInputs: formInputs,
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final seedInput = formInputs.where((i) => i.label == "Seed");
+    if (seedInput.isNotEmpty && seedInput.first.suffix == null) {
+      seedInput.first.suffix = (ctx) {
+        return Tooltip(
+          message: "Random seed",
+          child: InkWell(
+            onTap: () {
+              seedInput.first.controller.text = (Random().nextInt(2147483646) + 1).toString();
+              NodeControls.of(ctx)?.requestUpdate();
+            },
+            child: Icon(Icons.refresh, color: Colors.black, size: 20),
+          ),
+        );
+      };
+    }
+    return super.build(context);
   }
 
   @override
