@@ -128,7 +128,7 @@ class _State extends State<FolderView> {
     LazyBox<PromptData>? box = provider.boxMap[widget.path];
 
     // Folder not loaded, load it to cache
-    if (box == null && await Hive.boxExists("folders")) {
+    if (box == null && await Hive.boxExists("folders", path: provider.projectPath)) {
       Folder folder = provider.folders.values.firstWhere((item) => item.name == widget.path);
       if (folder.encrypted) {
         await showPasswordDialog(context, widget.path);

@@ -173,11 +173,9 @@ class _State extends State<NodeEditor> {
       if (!imageExtensions.contains(ext)) continue;
 
       final bytes = await File(file.path).readAsBytes();
-      final image = await decodeImageFromList(bytes);
-      provider.nodeController.addNode(
-        ImageNode(data: bytes, image: image),
-        details.localPosition,
-      );
+      final node = ImageNode();
+      await node.loadImageBytes(bytes, fileName: file.name);
+      provider.nodeController.addNode(node, details.localPosition);
     }
   }
 

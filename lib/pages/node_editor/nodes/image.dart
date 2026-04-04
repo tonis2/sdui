@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:sdui/models/index.dart';
 import 'dart:ui' as ui;
 import 'package:easy_nodes/index.dart';
+import 'package:image/image.dart' as img;
 
 class ImageNode extends Node {
   @override
@@ -48,6 +49,21 @@ class ImageNode extends Node {
     return PromptResponse(images: [data!]);
   }
 
+  /// Convert non-PNG/JPG formats (e.g. webp) to PNG bytes.
+  static Uint8List _ensurePngOrJpg(Uint8List bytes, String? fileName) {
+    final ext = (fileName ?? '').split('.').last.toLowerCase();
+    if (ext == 'png' || ext == 'jpg' || ext == 'jpeg') return bytes;
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+    return Uint8List.fromList(img.encodePng(decoded));
+  }
+
+  Future<void> loadImageBytes(Uint8List bytes, {String? fileName, NodeEditorController? provider}) async {
+    data = _ensurePngOrJpg(bytes, fileName);
+    image = await decodeImageFromList(data!);
+    provider?.requestUpdate();
+  }
+
   void pickImage(BuildContext context) async {
     // Capture the controller before any async operations
     NodeEditorController? provider = NodeControls.of(context);
@@ -57,12 +73,7 @@ class ImageNode extends Node {
       PlatformFile file = result.files.first;
       final bytes = file.bytes ?? (file.path != null ? await File(file.path!).readAsBytes() : null);
       if (bytes == null) return;
-      image = await decodeImageFromList(bytes);
-      data = bytes;
-      provider?.requestUpdate();
-    } else {
-      print("canceled");
-      // User canceled the picker
+      await loadImageBytes(bytes, fileName: file.name, provider: provider);
     }
   }
 

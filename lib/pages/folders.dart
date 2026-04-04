@@ -26,9 +26,9 @@ class _State extends State<Folders> {
   }
 
   void loadFolders(int page) async {
-    if (await Hive.boxExists("folders") == false) return;
-    folders = [];
     AppState provider = Inherited.of(context)!;
+    if (await Hive.boxExists("folders", path: provider.projectPath) == false) return;
+    folders = [];
     activePage = page;
     int startIndex = (page - 1) * itemsOnPage;
     for (Folder folder in provider.folders.values.toList().getRange(
