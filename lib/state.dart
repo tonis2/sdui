@@ -37,7 +37,7 @@ class Inherited extends InheritedNotifier<AppState> {
 class AppState extends ChangeNotifier {
   late String _defaultSduiPath;
   late String _projectPath;
-  final Completer<void> _readyCompleter = Completer<void>();
+  Completer<void> _readyCompleter = Completer<void>();
   Future<void> get ready => _readyCompleter.future;
 
   String get projectPath => _projectPath;
@@ -145,6 +145,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> switchProject(String newPath) async {
+    _readyCompleter = Completer<void>();
     await Hive.close();
     boxMap.clear();
     nodeController.clear();
@@ -157,6 +158,7 @@ class AppState extends ChangeNotifier {
 
     _loadDynamicNodes();
     folders = await openProjectBox<Folder>('folders');
+    if (!_readyCompleter.isCompleted) _readyCompleter.complete();
     notifyListeners();
   }
 

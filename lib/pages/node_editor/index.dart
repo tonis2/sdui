@@ -21,31 +21,34 @@ class NodeEditor extends StatefulWidget {
 
 class _State extends State<NodeEditor> {
   bool loading = false;
+  String? _loadedProjectPath;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      AppState provider = Inherited.of(context)!;
-      provider.ready.then((_) async {
-        if (!mounted) return;
-        Box<Config> box = await provider.openProjectBox<Config>('configs');
-        if (!mounted) return;
-        if (provider.nodeController.nodes.isNotEmpty) return;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    AppState provider = Inherited.of(context)!;
+    if (_loadedProjectPath != provider.projectPath) {
+      _loadedProjectPath = provider.projectPath;
+      _reloadFromProject(provider);
+    }
+  }
 
-        var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
-        var configs = box.values.where((item) => item.name == "default");
-        if (configs.isNotEmpty) {
-          await _loadCanvasData(provider, jsonDecode(configs.first.data));
-        } else {
-          await _loadCanvasData(provider, jsonDecode(defaultConfig));
-        }
+  Future<void> _reloadFromProject(AppState provider) async {
+    await provider.ready;
+    if (!mounted) return;
+    Box<Config> box = await provider.openProjectBox<Config>('configs');
+    if (!mounted) return;
 
-        if (!mounted) return;
-        setState(() {});
-      });
-    });
+    var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
+    var configs = box.values.where((item) => item.name == "default");
+    if (configs.isNotEmpty) {
+      await _loadCanvasData(provider, jsonDecode(configs.first.data));
+    } else {
+      await _loadCanvasData(provider, jsonDecode(defaultConfig));
+    }
+
+    if (!mounted) return;
+    setState(() {});
   }
 
   /// Shared loader: registers embedded dynamic node configs, then loads the canvas.
@@ -85,10 +88,11 @@ class _State extends State<NodeEditor> {
     var data = jsonEncode(canvasJson);
 
     if (configs.isNotEmpty) {
-      configs.putAt(0, Config(name: "default", data: data));
+      await configs.putAt(0, Config(name: "default", data: data));
     } else {
-      configs.add(Config(name: "default", data: data));
+      await configs.add(Config(name: "default", data: data));
     }
+    await configs.flush();
 
     if (saveAsFile) {
       String? path = await FilePicker.platform.saveFile(
