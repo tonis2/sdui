@@ -37,7 +37,8 @@ class Inherited extends InheritedNotifier<AppState> {
 class AppState extends ChangeNotifier {
   late String _defaultSduiPath;
   late String _projectPath;
-  Box? _metaBox;
+  final Completer<void> _readyCompleter = Completer<void>();
+  Future<void> get ready => _readyCompleter.future;
 
   String get projectPath => _projectPath;
 
@@ -50,12 +51,6 @@ class AppState extends ChangeNotifier {
   }
 
   String get nodesDirectory => '$_projectPath/nodes';
-
-  List<String> get recentProjects {
-    final list = _metaBox?.get('recentProjects');
-    if (list == null) return [];
-    return List<String>.from(list);
-  }
 
   AppState() {
     if (!kIsWeb) {
@@ -123,6 +118,16 @@ class AppState extends ChangeNotifier {
 
     nodeController.registerNodeType(
       NodeTypeMetadata(
+        typeName: 'FluxNode',
+        displayName: 'Flux Runner',
+        description: 'Connect to llm-runner Flux HTTP server',
+        icon: Icons.bolt,
+        factory: (json) => FluxNode.fromJson(json),
+      ),
+    );
+
+    nodeController.registerNodeType(
+      NodeTypeMetadata(
         typeName: 'FolderNode',
         displayName: 'Folder',
         description: 'Organize files in folders',
@@ -133,13 +138,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _initProject() async {
-    _metaBox = await Hive.openBox('sdui_meta', path: _defaultSduiPath);
-    final lastProject = _metaBox?.get('lastProject') as String?;
-    if (lastProject != null && Directory(lastProject).existsSync()) {
-      _projectPath = lastProject;
-    }
     _loadDynamicNodes();
     folders = await openProjectBox<Folder>('folders');
+    if (!_readyCompleter.isCompleted) _readyCompleter.complete();
     notifyListeners();
   }
 
@@ -153,15 +154,6 @@ class AppState extends ChangeNotifier {
     if (!dir.existsSync()) dir.createSync(recursive: true);
     final nodesDir = Directory(nodesDirectory);
     if (!nodesDir.existsSync()) nodesDir.createSync(recursive: true);
-
-    // Re-open meta box and save project info
-    _metaBox = await Hive.openBox('sdui_meta', path: _defaultSduiPath);
-    _metaBox?.put('lastProject', newPath);
-    final recent = recentProjects;
-    recent.remove(newPath);
-    recent.insert(0, newPath);
-    if (recent.length > 10) recent.removeLast();
-    _metaBox?.put('recentProjects', recent);
 
     _loadDynamicNodes();
     folders = await openProjectBox<Folder>('folders');

@@ -31,7 +31,6 @@ class _State extends State<Menu> {
   }
 
   Widget _projectMenu(BuildContext context, AppState provider, ThemeData theme) {
-    final recent = provider.recentProjects;
     final currentName = provider.projectPath.split('/').last;
 
     return Tooltip(
@@ -48,28 +47,14 @@ class _State extends State<Menu> {
             value: '_open',
             child: Text('Open Project...', style: TextStyle(color: theme.colorScheme.tertiary)),
           ),
-          if (recent.isNotEmpty) const PopupMenuDivider(),
-          ...recent.map((path) {
-            final name = path.split('/').last;
-            final isCurrent = path == provider.projectPath;
-            return PopupMenuItem(
-              value: path,
-              child: Text(isCurrent ? '* $name' : name, style: TextStyle(color: theme.colorScheme.tertiary)),
-            );
-          }),
         ],
         onSelected: (value) async {
-          if (value == '_new' || value == '_open') {
-            final path = await FilePicker.platform.getDirectoryPath(
-              dialogTitle: value == '_new' ? 'Choose location for new project' : 'Open project folder',
-            );
-            if (path == null) return;
-            await provider.switchProject(path);
-            if (context.mounted) context.go(AppRoutes.home);
-          } else {
-            await provider.switchProject(value);
-            if (context.mounted) context.go(AppRoutes.home);
-          }
+          final path = await FilePicker.platform.getDirectoryPath(
+            dialogTitle: value == '_new' ? 'Choose location for new project' : 'Open project folder',
+          );
+          if (path == null) return;
+          await provider.switchProject(path);
+          if (context.mounted) context.go(AppRoutes.home);
         },
       ),
     );

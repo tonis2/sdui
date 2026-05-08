@@ -25,21 +25,26 @@ class _State extends State<NodeEditor> {
   @override
   void initState() {
     super.initState();
-    AppState provider = Inherited.of(context)!;
-    provider.openProjectBox<Config>('configs').then((box) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (provider.nodeController.nodes.isNotEmpty) return;
+      AppState provider = Inherited.of(context)!;
+      provider.ready.then((_) async {
+        if (!mounted) return;
+        Box<Config> box = await provider.openProjectBox<Config>('configs');
+        if (!mounted) return;
+        if (provider.nodeController.nodes.isNotEmpty) return;
 
-      var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
-      var configs = box.values.where((item) => item.name == "default");
-      if (configs.isNotEmpty) {
-        await _loadCanvasData(provider, jsonDecode(configs.first.data));
-      } else {
-        await _loadCanvasData(provider, jsonDecode(defaultConfig));
-      }
+        var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
+        var configs = box.values.where((item) => item.name == "default");
+        if (configs.isNotEmpty) {
+          await _loadCanvasData(provider, jsonDecode(configs.first.data));
+        } else {
+          await _loadCanvasData(provider, jsonDecode(defaultConfig));
+        }
 
-      if (!mounted) return;
-      setState(() {});
+        if (!mounted) return;
+        setState(() {});
+      });
     });
   }
 
