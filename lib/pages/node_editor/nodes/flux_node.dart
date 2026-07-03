@@ -17,7 +17,7 @@ class FluxApi extends Server {
       "height": prompt.height,
     };
     if (prompt.initImages.isNotEmpty) {
-      body["init_images"] = [base64.encode(prompt.initImages.first)];
+      body["init_images"] = prompt.initImages.map(base64.encode).toList();
     }
 
     return post("/sdapi/v1/img2img", body).then((json) {
