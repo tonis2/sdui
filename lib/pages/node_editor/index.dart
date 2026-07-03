@@ -21,14 +21,17 @@ class NodeEditor extends StatefulWidget {
 
 class _State extends State<NodeEditor> {
   bool loading = false;
-  String? _loadedProjectPath;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     AppState provider = Inherited.of(context)!;
-    if (_loadedProjectPath != provider.projectPath) {
-      _loadedProjectPath = provider.projectPath;
+    // Only load from disk when the canvas for this project hasn't been loaded
+    // yet. The flag lives on AppState (not this widget State), so returning to
+    // the canvas after navigating away keeps the live in-memory graph instead
+    // of reloading stale persisted config and dropping unsaved nodes/edges.
+    if (provider.loadedCanvasProjectPath != provider.projectPath) {
+      provider.loadedCanvasProjectPath = provider.projectPath;
       _reloadFromProject(provider);
     }
   }

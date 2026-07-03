@@ -149,6 +149,7 @@ class AppState extends ChangeNotifier {
     await Hive.close();
     boxMap.clear();
     nodeController.clear();
+    loadedCanvasProjectPath = null;
     _projectPath = newPath;
 
     final dir = Directory(newPath);
@@ -166,6 +167,11 @@ class AppState extends ChangeNotifier {
 
   // I hold nodeController here, so different pages can edit node canvas
   NodeEditorController nodeController = NodeEditorController();
+
+  // Tracks which project's canvas is currently loaded into [nodeController].
+  // Lives here (not on the canvas widget State) so navigating away from and
+  // back to the canvas doesn't reload from disk and clobber the live graph.
+  String? loadedCanvasProjectPath;
 
   late Box<Folder> folders;
   List<QueueItem> promptQueue = [];
