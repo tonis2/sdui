@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '/models/index.dart';
 import 'package:easy_nodes/index.dart';
+import 'image.dart';
 
 List<FormInput> defaultFormInputs = [
   FormInput(
@@ -99,6 +100,19 @@ class PromptNode extends FormNode {
     return super.build(context);
   }
 
+  /// Sort incoming nodes by an [ImageNode]'s explicit [ImageNode.order] so the
+  /// images array is deterministic regardless of the order connections were
+  /// drawn. Ties (and non-image nodes) keep their original relative order.
+  List<Node> _orderedImages(List<Node> nodes) {
+    final indexed = nodes.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final ao = a.value is ImageNode ? (a.value as ImageNode).order : 0;
+      final bo = b.value is ImageNode ? (b.value as ImageNode).order : 0;
+      return ao != bo ? ao.compareTo(bo) : a.key.compareTo(b.key);
+    });
+    return indexed.map((e) => e.value).toList();
+  }
+
   @override
   Future<ImagePrompt> run(BuildContext context, ExecutionContext cache) async {
     NodeEditorController? provider = NodeControls.of(context);
@@ -119,12 +133,12 @@ class PromptNode extends FormNode {
 
     if (formKey.currentState != null && formKey.currentState!.validate()) {
       try {
-        for (var node in provider!.incomingNodes(this, 0)) {
+        for (var node in _orderedImages(provider!.incomingNodes(this, 0))) {
           PromptResponse image = await node.execute(context, cache);
           prompt.extraImages.add(image.images.first);
         }
 
-        for (var node in provider.incomingNodes(this, 1)) {
+        for (var node in _orderedImages(provider.incomingNodes(this, 1))) {
           PromptResponse image = await node.execute(context, cache);
           prompt.initImages.add(image.images.first);
         }

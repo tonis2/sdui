@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -22,10 +23,12 @@ class ImageNode extends Node {
     super.key,
     this.data,
     this.image,
+    this.order = 0,
   });
 
   factory ImageNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
+    final encoded = json["data"] as String?;
     return ImageNode(
       label: "Image",
       size: const Size(400, 400),
@@ -37,15 +40,44 @@ class ImageNode extends Node {
       ],
       offset: data.offset,
       uuid: data.uuid,
+      // Restore the persisted pixel bytes. The decoded ui.Image is rebuilt
+      // asynchronously in [init]; keeping the bytes here means a canvas
+      // reload (e.g. navigating away and back) no longer clears the image.
+      data: encoded != null ? base64.decode(encoded) : null,
+      order: (json["order"] as num?)?.toInt() ?? 0,
     );
   }
 
   ui.Image? image;
   Uint8List? data;
 
+  /// Explicit ordering slot for this image when several images feed the same
+  /// input port. The prompt node sorts incoming images by this value ascending,
+  /// so a node with order 1 lands before order 2 in the init_images array.
+  int order;
+
+  /// Rebuild the decoded [image] from the restored [data] after deserialization.
+  @override
+  Future<void> init(BuildContext context) async {
+    if (data != null && image == null) {
+      image = await decodeImageFromList(data!);
+    }
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+    // Persist the pixel bytes alongside the node so the image survives a
+    // save/load or a canvas reload. Without this the node reloads empty and
+    // any prompt using it as an init image produces a black result.
+    if (data != null) json["data"] = base64.encode(data!);
+    json["order"] = order;
+    return json;
+  }
+
   @override
   Future<PromptResponse> run(BuildContext context, ExecutionContext cache) async {
-    if (image == null) throw Exception("Image is empty");
+    if (data == null) throw Exception("Image is empty");
     return PromptResponse(images: [data!]);
   }
 
@@ -117,6 +149,40 @@ class ImageNode extends Node {
                 ],
               ],
             ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Tooltip(
+                message: "Order in the images array (lower comes first)",
+                child: Text("Order", style: theme.textTheme.bodyLarge),
+              ),
+              IconButton(
+                tooltip: "Move earlier",
+                icon: Icon(Icons.remove_circle, color: theme.colorScheme.onSurface),
+                onPressed: () {
+                  if (order > 0) order--;
+                  provider?.requestUpdate();
+                },
+              ),
+              Container(
+                constraints: const BoxConstraints(minWidth: 32),
+                alignment: Alignment.center,
+                child: Text("$order", style: theme.textTheme.titleMedium),
+              ),
+              IconButton(
+                tooltip: "Move later",
+                icon: Icon(Icons.add_circle, color: theme.colorScheme.onSurface),
+                onPressed: () {
+                  order++;
+                  provider?.requestUpdate();
+                },
+              ),
+            ],
           ),
         ),
       ],

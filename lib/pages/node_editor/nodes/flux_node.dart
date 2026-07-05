@@ -20,6 +20,18 @@ class FluxApi extends Server {
       body["init_images"] = prompt.initImages.map(base64.encode).toList();
     }
 
+    // Debug: log the outgoing prompt without dumping image bytes.
+    // debugPrint(
+    //   '[FluxApi] POST /sdapi/v1/img2img\n'
+    //   '  prompt: "${prompt.prompt}"\n'
+    //   '  negative: "${prompt.negativePrompt}"\n'
+    //   '  sampler: ${prompt.sampler}, scheduler: ${prompt.scheduler}\n'
+    //   '  size: ${prompt.width}x${prompt.height}, steps: ${prompt.steps}, seed: ${prompt.seed}\n'
+    //   '  guidance: ${prompt.guidance}, denoise: ${prompt.noiseStrenght}, frames: ${prompt.frames}, clipSkip: ${prompt.clipSkip}\n'
+    //   '  init_images: ${prompt.initImages.length} [${prompt.initImages.map((i) => "${i.lengthInBytes}B").join(", ")}]\n'
+    //   '  extra_images: ${prompt.extraImages.length} [${prompt.extraImages.map((i) => "${i.lengthInBytes}B").join(", ")}]',
+    // );
+
     return post("/sdapi/v1/img2img", body).then((json) {
       final data = json["data"] as String?;
       if (data == null) {
@@ -60,7 +72,10 @@ class FluxNode extends FormNode {
   factory FluxNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
     final formInputs =
-        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? _defaultInputs;
+        (json["formInputs"] as List<dynamic>?)
+            ?.map((i) => FormInput.fromJson(i))
+            .toList() ??
+        _defaultInputs;
 
     return FluxNode(
       offset: data.offset,
@@ -70,12 +85,18 @@ class FluxNode extends FormNode {
   }
 
   @override
-  Future<PromptResponse> run(BuildContext context, ExecutionContext cache) async {
+  Future<PromptResponse> run(
+    BuildContext context,
+    ExecutionContext cache,
+  ) async {
     NodeEditorController? editor = NodeControls.of(context);
     AppState provider = Inherited.of(context)!;
 
     if (formKey.currentState != null && formKey.currentState!.validate()) {
-      final api = FluxApi(headers: {}, baseUrl: formInputs.first.controller.text);
+      final api = FluxApi(
+        headers: {},
+        baseUrl: formInputs.first.controller.text,
+      );
 
       final incoming = editor?.incomingNodes(this, 0) ?? [];
       if (incoming.isEmpty) {
@@ -84,7 +105,10 @@ class FluxNode extends FormNode {
 
       ImagePrompt prompt = await incoming.first.execute(context, cache);
 
-      final response = await provider.createPromptRequest(prompt, () => api.postImage(prompt));
+      final response = await provider.createPromptRequest(
+        prompt,
+        () => api.postImage(prompt),
+      );
 
       response.prompt = ImagePrompt(
         prompt: prompt.prompt,
