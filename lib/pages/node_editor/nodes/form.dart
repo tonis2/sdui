@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '/models/index.dart';
 import 'package:easy_nodes/index.dart';
-import 'image.dart';
 
 List<FormInput> defaultFormInputs = [
   FormInput(
@@ -100,15 +99,19 @@ class PromptNode extends FormNode {
     return super.build(context);
   }
 
-  /// Sort incoming nodes by an [ImageNode]'s explicit [ImageNode.order] so the
-  /// images array is deterministic regardless of the order connections were
-  /// drawn. Ties (and non-image nodes) keep their original relative order.
+  /// Order incoming image nodes by their position on the canvas: top-to-bottom,
+  /// then left-to-right. This makes the images array deterministic and stable —
+  /// it no longer depends on the order connections were drawn, so replacing or
+  /// reconnecting a node never reshuffles init_images. Arrange the nodes
+  /// vertically to control their order in the array.
   List<Node> _orderedImages(List<Node> nodes) {
     final indexed = nodes.asMap().entries.toList();
     indexed.sort((a, b) {
-      final ao = a.value is ImageNode ? (a.value as ImageNode).order : 0;
-      final bo = b.value is ImageNode ? (b.value as ImageNode).order : 0;
-      return ao != bo ? ao.compareTo(bo) : a.key.compareTo(b.key);
+      final dy = a.value.offset.dy.compareTo(b.value.offset.dy);
+      if (dy != 0) return dy;
+      final dx = a.value.offset.dx.compareTo(b.value.offset.dx);
+      if (dx != 0) return dx;
+      return a.key.compareTo(b.key);
     });
     return indexed.map((e) => e.value).toList();
   }
