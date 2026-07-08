@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:easy_nodes/index.dart';
 import '/models/index.dart';
@@ -22,6 +23,13 @@ class NodeEditor extends StatefulWidget {
 class _State extends State<NodeEditor> {
   bool loading = false;
 
+  /// Debounce timer for autosave; coalesces bursts of graph edits into one write.
+  Timer? _saveDebounce;
+
+  /// The controller we attached the autosave listener to, kept so [dispose] can
+  /// detach without a (defunct) InheritedWidget lookup.
+  NodeEditorController? _wiredController;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -34,6 +42,38 @@ class _State extends State<NodeEditor> {
       provider.loadedCanvasProjectPath = provider.projectPath;
       _reloadFromProject(provider);
     }
+
+    // Persist the graph automatically on every change so connections added in a
+    // session survive a later reload (restart / project switch) without relying
+    // on a manual Ctrl+S. Wired once; the guards in [_scheduleAutosave] keep it
+    // from writing mid-load or mid-run.
+    if (_wiredController != provider.nodeController) {
+      _wiredController?.removeListener(_scheduleAutosave);
+      _wiredController = provider.nodeController;
+      _wiredController!.addListener(_scheduleAutosave);
+    }
+  }
+
+  void _scheduleAutosave() {
+    if (!mounted) return;
+    final provider = Inherited.of(context);
+    if (provider == null) return;
+    // Skip while executing (a run churns notifyListeners) and until this
+    // project's canvas has finished loading, so we never overwrite the saved
+    // graph with a transient or half-loaded state.
+    if (provider.nodeController.isExecuting) return;
+    if (provider.loadedCanvasProjectPath != provider.projectPath) return;
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) saveCanvas();
+    });
+  }
+
+  @override
+  void dispose() {
+    _saveDebounce?.cancel();
+    _wiredController?.removeListener(_scheduleAutosave);
+    super.dispose();
   }
 
   Future<void> _reloadFromProject(AppState provider) async {
@@ -42,7 +82,9 @@ class _State extends State<NodeEditor> {
     Box<Config> box = await provider.openProjectBox<Config>('configs');
     if (!mounted) return;
 
-    var defaultConfig = await rootBundle.loadString('assets/defaultConfig.json');
+    var defaultConfig = await rootBundle.loadString(
+      'assets/defaultConfig.json',
+    );
     var configs = box.values.where((item) => item.name == "default");
     if (configs.isNotEmpty) {
       await _loadCanvasData(provider, jsonDecode(configs.first.data));
@@ -55,7 +97,10 @@ class _State extends State<NodeEditor> {
   }
 
   /// Shared loader: registers embedded dynamic node configs, then loads the canvas.
-  Future<void> _loadCanvasData(AppState provider, Map<String, dynamic> json) async {
+  Future<void> _loadCanvasData(
+    AppState provider,
+    Map<String, dynamic> json,
+  ) async {
     final dynamicNodes = json['dynamicNodes'] as List<dynamic>?;
     if (dynamicNodes != null) {
       for (final configJson in dynamicNodes) {
@@ -148,8 +193,14 @@ class _State extends State<NodeEditor> {
           onSubmitted: (value) => Navigator.of(ctx).pop(value),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(urlController.text), child: const Text('Load')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(urlController.text),
+            child: const Text('Load'),
+          ),
         ],
       ),
     );
@@ -166,9 +217,9 @@ class _State extends State<NodeEditor> {
       await _loadCanvasData(provider, json);
     } catch (err) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load: $err')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load: $err')));
       }
     } finally {
       setState(() => loading = false);
@@ -198,7 +249,9 @@ class _State extends State<NodeEditor> {
     return NodeControls(
       notifier: provider.nodeController,
       child: CallbackShortcuts(
-        bindings: {SingleActivator(LogicalKeyboardKey.keyS, control: true): saveCanvas},
+        bindings: {
+          SingleActivator(LogicalKeyboardKey.keyS, control: true): saveCanvas,
+        },
         child: Focus(
           autofocus: true,
           child: Scaffold(
@@ -224,7 +277,8 @@ class _State extends State<NodeEditor> {
                   children: [
                     FloatingActionButton(
                       heroTag: "run",
-                      onPressed: () => provider.nodeController.executeAllEndpoints(ctx),
+                      onPressed: () =>
+                          provider.nodeController.executeAllEndpoints(ctx),
                       child: Icon(Icons.play_arrow),
                     ),
                     FloatingActionButton(
@@ -232,8 +286,16 @@ class _State extends State<NodeEditor> {
                       onPressed: () => saveCanvas(saveAsFile: true),
                       child: Icon(Icons.save),
                     ),
-                    FloatingActionButton(heroTag: "load", onPressed: loadConfig, child: Icon(Icons.folder_open)),
-                    FloatingActionButton(heroTag: "url", onPressed: loadFromUrl, child: Icon(Icons.link)),
+                    FloatingActionButton(
+                      heroTag: "load",
+                      onPressed: loadConfig,
+                      child: Icon(Icons.folder_open),
+                    ),
+                    FloatingActionButton(
+                      heroTag: "url",
+                      onPressed: loadFromUrl,
+                      child: Icon(Icons.link),
+                    ),
                   ],
                 );
               },

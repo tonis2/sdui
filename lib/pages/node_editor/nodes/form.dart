@@ -13,7 +13,14 @@ List<FormInput> defaultFormInputs = [
     maxLines: 10,
     validator: defaultValidator,
   ),
-  FormInput(label: "Negative prompt", type: FormInputType.textArea, width: 450, height: 100, minLines: 4, maxLines: 10),
+  FormInput(
+    label: "Negative prompt",
+    type: FormInputType.textArea,
+    width: 450,
+    height: 100,
+    minLines: 4,
+    maxLines: 10,
+  ),
   FormInput(
     width: 221,
     height: 60,
@@ -28,10 +35,30 @@ List<FormInput> defaultFormInputs = [
     label: "Scheduler",
     type: FormInputType.dropdown,
     defaultValue: "default",
-    options: ["default", "discrete", "karras", "exponential", "ays", "gits", "sgm_uniform", "simple", "smoothstep"],
+    options: [
+      "default",
+      "discrete",
+      "karras",
+      "exponential",
+      "ays",
+      "gits",
+      "sgm_uniform",
+      "simple",
+      "smoothstep",
+    ],
   ),
-  FormInput(label: "Width", type: FormInputType.range, defaultValue: "1024", width: 220),
-  FormInput(label: "Height", type: FormInputType.range, defaultValue: "1024", width: 220),
+  FormInput(
+    label: "Width",
+    type: FormInputType.range,
+    defaultValue: "1024",
+    width: 220,
+  ),
+  FormInput(
+    label: "Height",
+    type: FormInputType.range,
+    defaultValue: "1024",
+    width: 220,
+  ),
   FormInput(label: "Seed", type: FormInputType.text, defaultValue: "-1"),
   FormInput(label: "Steps", type: FormInputType.int, defaultValue: "8"),
   FormInput(label: "Guidance", type: FormInputType.double, defaultValue: "1"),
@@ -62,7 +89,10 @@ class PromptNode extends FormNode {
   factory PromptNode.fromJson(Map<String, dynamic> json) {
     final data = Node.fromJson(json);
     final formInputs =
-        (json["formInputs"] as List<dynamic>?)?.map((i) => FormInput.fromJson(i)).toList() ?? defaultFormInputs;
+        (json["formInputs"] as List<dynamic>?)
+            ?.map((i) => FormInput.fromJson(i))
+            .toList() ??
+        defaultFormInputs;
 
     return PromptNode(
       label: "Prompt config",
@@ -88,7 +118,8 @@ class PromptNode extends FormNode {
           message: "Random seed",
           child: InkWell(
             onTap: () {
-              seedInput.first.controller.text = (Random().nextInt(2147483646) + 1).toString();
+              seedInput.first.controller.text =
+                  (Random().nextInt(2147483646) + 1).toString();
               NodeControls.of(ctx)?.requestUpdate();
             },
             child: Icon(Icons.refresh, color: Colors.black, size: 20),

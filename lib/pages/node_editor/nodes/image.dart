@@ -17,7 +17,10 @@ class ImageNode extends Node {
     super.label = "Image",
     super.size = const Size(400, 400),
     super.inputs = const [],
-    super.outputs = const [Output(label: "Image", color: Colors.yellow), Output(label: "Mask")],
+    super.outputs = const [
+      Output(label: "Image", color: Colors.yellow),
+      Output(label: "Mask"),
+    ],
     super.offset,
     super.uuid,
     super.key,
@@ -39,9 +42,10 @@ class ImageNode extends Node {
       ],
       offset: data.offset,
       uuid: data.uuid,
-      // Restore the persisted pixel bytes. The decoded ui.Image is rebuilt
-      // asynchronously in [init]; keeping the bytes here means a canvas
-      // reload (e.g. navigating away and back) no longer clears the image.
+      // Bytes are no longer written by [toJson], so this is null for configs
+      // saved going forward and the node loads empty. Kept as a backward-compat
+      // fallback: an older config (or an imported file) that still embeds "data"
+      // will decode here, with the ui.Image rebuilt asynchronously in [init].
       data: encoded != null ? base64.decode(encoded) : null,
     );
   }
@@ -59,16 +63,19 @@ class ImageNode extends Node {
 
   @override
   Map<String, dynamic> toJson() {
-    final json = super.toJson();
-    // Persist the pixel bytes alongside the node so the image survives a
-    // save/load or a canvas reload. Without this the node reloads empty and
-    // any prompt using it as an init image produces a black result.
-    if (data != null) json["data"] = base64.encode(data!);
-    return json;
+    // Intentionally do NOT persist the pixel bytes. Image nodes are saved as
+    // lightweight placeholders: their type, position and connections are kept,
+    // but the image itself is left out of the canvas config. Opening a project
+    // therefore restores empty image nodes that you re-populate by hand — and it
+    // keeps the (now autosaved) config small instead of embedding base64 blobs.
+    return super.toJson();
   }
 
   @override
-  Future<PromptResponse> run(BuildContext context, ExecutionContext cache) async {
+  Future<PromptResponse> run(
+    BuildContext context,
+    ExecutionContext cache,
+  ) async {
     if (data == null) throw Exception("Image is empty");
     return PromptResponse(images: [data!]);
   }
@@ -82,7 +89,11 @@ class ImageNode extends Node {
     return Uint8List.fromList(img.encodePng(decoded));
   }
 
-  Future<void> loadImageBytes(Uint8List bytes, {String? fileName, NodeEditorController? provider}) async {
+  Future<void> loadImageBytes(
+    Uint8List bytes, {
+    String? fileName,
+    NodeEditorController? provider,
+  }) async {
     data = _ensurePngOrJpg(bytes, fileName);
     image = await decodeImageFromList(data!);
     provider?.requestUpdate();
@@ -95,7 +106,9 @@ class ImageNode extends Node {
 
     if (result != null) {
       PlatformFile file = result.files.first;
-      final bytes = file.bytes ?? (file.path != null ? await File(file.path!).readAsBytes() : null);
+      final bytes =
+          file.bytes ??
+          (file.path != null ? await File(file.path!).readAsBytes() : null);
       if (bytes == null) return;
       await loadImageBytes(bytes, fileName: file.name, provider: provider);
     }
@@ -117,14 +130,26 @@ class ImageNode extends Node {
             child: Stack(
               children: [
                 if (image == null)
-                  Positioned(left: 75, top: 120, child: Text("Click to pick image", style: theme.textTheme.bodyLarge)),
+                  Positioned(
+                    left: 75,
+                    top: 120,
+                    child: Text(
+                      "Click to pick image",
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                  ),
                 if (image != null && data != null) ...[
                   Positioned(
                     left: 0,
                     top: 0,
                     width: 300,
                     height: 300,
-                    child: Image(image: MemoryImage(data!), width: 300, height: 300, fit: .cover),
+                    child: Image(
+                      image: MemoryImage(data!),
+                      width: 300,
+                      height: 300,
+                      fit: .cover,
+                    ),
                   ),
                   Positioned(
                     right: 5,
