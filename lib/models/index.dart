@@ -243,14 +243,26 @@ class ImageAdapter extends TypeAdapter<PromptData> {
   }
 }
 
-@immutable
 class QueueItem {
-  final Future<dynamic> Function() promptRequest;
+  // Nullable so [release] can drop them once the request has settled. Both the
+  // request closure (it captures the input ImagePrompt with its init/extra
+  // images and mask) and the completed response (it holds the full-resolution
+  // generated images) are only needed while the prompt is in flight. The queue
+  // view never reads them, so holding them for the app's lifetime is what made
+  // every processed prompt permanently grow memory by its image data.
+  Future<dynamic> Function()? promptRequest;
   DateTime? endTime;
   DateTime? startTime;
   Uint8List? image;
   bool active;
-  Completer response;
+  Completer? response;
 
   QueueItem({this.endTime, required this.promptRequest, required this.response, this.image, this.active = false});
+
+  /// Drop the heavy references a finished entry no longer needs, keeping only
+  /// the metadata the queue view displays (times, [active], input [image]).
+  void release() {
+    promptRequest = null;
+    response = null;
+  }
 }

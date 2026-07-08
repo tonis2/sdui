@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:go_router/go_router.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:sdui/config.dart';
@@ -135,7 +136,14 @@ class _State extends State<FolderView> {
     // "images never released" leak. Children unmount before this parent State
     // is disposed, so their image-stream listeners are already gone; evicting
     // now drops the last reference and frees the texture.
+    _logCacheStats('dispose: before');
     _evictImages(data);
+    // Eviction only removes the keep-alive (LRU) entry. Any image still tracked
+    // as "live" keeps an ImageStreamCompleterHandle pinning its ui.Image (and
+    // its GPU texture). Since nothing under this route should be listening once
+    // we're disposing, drop the live set so those textures become collectable.
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    _logCacheStats('dispose: after');
     data = [];
     super.dispose();
   }
@@ -153,14 +161,29 @@ class _State extends State<FolderView> {
     }
   }
 
+  /// Debug-only snapshot of the global image cache so we can see, in the run
+  /// log, whether leaving the folder actually shrinks it. Remove once the
+  /// memory behaviour is confirmed.
+  void _logCacheStats(String when) {
+    if (kReleaseMode) return;
+    final ImageCache c = PaintingBinding.instance.imageCache;
+    debugPrint(
+      '[FolderView] $when — cached: ${c.currentSize} imgs / '
+      '${(c.currentSizeBytes / 1048576).toStringAsFixed(1)} MB, '
+      'live: ${c.liveImageCount}, pending: ${c.pendingImageCount}',
+    );
+  }
+
   // Grid thumbnails only ever render a few hundred pixels wide, so decode them
   // at a reduced resolution instead of uploading each full-size image to the
   // GPU (a 1024px source then costs ~1/4 the texture memory). Full resolution
   // is used only in [openGallery]. Kept as a fixed target rather than a
   // devicePixelRatio-derived one so the ResizeImage cache key built here always
   // matches the one [_evictImages] reconstructs when releasing memory.
-  // allowUpscaling: false leaves already-small images untouched.
-  static const int _thumbCacheWidth = 512;
+  // allowUpscaling: false leaves already-small images untouched. 400px keeps
+  // grid tiles (~150-400px wide) crisp while downscaling the common 512/768/
+  // 1024px sources — a 1024px image then costs ~6x less texture memory.
+  static const int _thumbCacheWidth = 400;
 
   ImageProvider _thumbProvider(PromptData item) =>
       ResizeImage(MemoryImage(item.data), width: _thumbCacheWidth, allowUpscaling: false);
@@ -220,6 +243,10 @@ class _State extends State<FolderView> {
     }
 
     _lastKnownBoxLength = box?.length ?? 0;
+    // This runs after awaits, so the page may have been left mid-load; don't
+    // setState (and don't re-decode images) on a disposed State.
+    if (!mounted) return;
+    _logCacheStats('loaded page $page');
     setState(() {});
   }
 

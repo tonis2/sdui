@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter/material.dart';
 import '/models/index.dart';
@@ -240,29 +241,66 @@ class AppState extends ChangeNotifier {
     // Dont send new prompt, if one is already in progress
     if (promptQueue.where((item) => item.active == true).isNotEmpty) return;
 
+    final request = item.promptRequest;
+    if (request == null) return;
+
     item.active = true;
     item.startTime = DateTime.now();
 
-    item
-        .promptRequest()
+    // Common teardown for both success and failure: mark done, hand the heavy
+    // response + request closure back to the GC (see [QueueItem.release]), then
+    // kick off the next queued prompt. Previously the error path did none of
+    // this, so a failed prompt stayed active forever — wedging the queue and
+    // permanently pinning its image data.
+    void finish() {
+      item.active = false;
+      item.endTime ??= DateTime.now();
+      item.release();
+      notifyListeners();
+
+      final unprocessed = promptQueue.where(
+        (queued) => queued.endTime == null && queued.promptRequest != null,
+      );
+      if (unprocessed.isNotEmpty) {
+        _processPrompt(unprocessed.first);
+      }
+    }
+
+    request()
         .then((response) {
-          QueueItem lastPrompt = promptQueue.firstWhere((item) => item.active == true);
-
-          // Promise finished
-          lastPrompt.endTime = DateTime.now();
-          lastPrompt.active = false;
-          lastPrompt.response.complete(response);
-
-          notifyListeners();
-
-          var unprocessedPrompts = promptQueue.where((item) => item.endTime == null);
-          if (unprocessedPrompts.isNotEmpty) {
-            _processPrompt(unprocessedPrompts.first);
-          }
+          item.response?.complete(response);
+          finish();
         })
         .catchError((err) {
           debugPrint(err.toString());
+          if (item.response?.isCompleted == false) item.response?.completeError(err);
+          finish();
         });
+  }
+
+  /// Replace a queue entry's full-resolution input image with a small
+  /// re-encoded thumbnail. The queue only ever renders it at 60x60, so keeping
+  /// the full input bytes for the entry's lifetime just wastes memory. Runs
+  /// fire-and-forget; on failure the original image is left untouched.
+  Future<void> _shrinkThumbnail(QueueItem item) async {
+    final source = item.image;
+    if (source == null) return;
+    try {
+      final codec = await ui.instantiateImageCodec(
+        source,
+        targetWidth: 96,
+        allowUpscaling: false,
+      );
+      final frame = await codec.getNextFrame();
+      final data = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      frame.image.dispose();
+      codec.dispose();
+      if (data == null) return;
+      item.image = data.buffer.asUint8List();
+      notifyListeners();
+    } catch (err) {
+      debugPrint('Failed to shrink queue thumbnail: $err');
+    }
   }
 
   Future<PromptResponse> createPromptRequest(ImagePrompt prompt, Future<dynamic> Function() request) async {
@@ -270,6 +308,7 @@ class AppState extends ChangeNotifier {
     var queue = QueueItem(response: completer, image: prompt.extraImages.firstOrNull, promptRequest: request);
 
     promptQueue.add(queue);
+    _shrinkThumbnail(queue);
     _processPrompt(queue);
     notifyListeners();
 
@@ -283,6 +322,7 @@ class AppState extends ChangeNotifier {
     var queue = QueueItem(response: completer, image: image, promptRequest: request);
 
     promptQueue.add(queue);
+    _shrinkThumbnail(queue);
 
     // Start immediately (concurrent)
     queue.active = true;
@@ -293,11 +333,15 @@ class AppState extends ChangeNotifier {
       queue.endTime = DateTime.now();
       queue.active = false;
       completer.complete(response);
+      // Local [completer]/[request] still hold what the caller awaits; this
+      // just stops the queue entry from pinning the response's image bytes.
+      queue.release();
       notifyListeners();
     }).catchError((err) {
       queue.endTime = DateTime.now();
       queue.active = false;
       completer.completeError(err);
+      queue.release();
       notifyListeners();
     });
 
